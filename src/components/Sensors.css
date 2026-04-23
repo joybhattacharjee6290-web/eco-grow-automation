@@ -1,0 +1,365 @@
+/* ========== Sensors Container ========== */
+.sensors {
+  padding: 2rem;
+  background: #ffffff;
+  height: 100vh;
+  /* Adjust for main-content padding */
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.sensors-wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 3rem;
+  width: 100%;
+  max-width: 1400px;
+  margin-left: 2rem;
+}
+
+.sensors-left {
+  flex: 0 0 auto;
+  width: 500px;
+}
+
+.sensors-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #0f766e;
+  margin: 0 0 0.5rem 0;
+  text-transform: capitalize;
+  letter-spacing: -0.5px;
+}
+
+/* Connection Status */
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.status-dot.connected {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.status-dot.disconnected {
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.status-text {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* ========== Sensors List ========== */
+.sensors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.sensor-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.sensor-item:hover {
+  background: #f0fdf4;
+  border-color: #a7f3d0;
+  transform: translateX(4px);
+}
+
+.sensor-item.disabled {
+  opacity: 0.5;
+  background: #f1f5f9;
+}
+
+.sensor-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sensor-icon {
+  font-size: 1.5rem;
+}
+
+.sensor-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.sensor-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f766e;
+  text-transform: capitalize;
+  letter-spacing: -0.3px;
+}
+
+.sensor-value {
+  font-size: 0.8rem;
+  color: #059669;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.sensor-status {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.sensor-status.active {
+  color: #059669;
+  background: #d1fae5;
+}
+
+.sensor-status.inactive {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+/* ========== Toggle Switch ========== */
+.sensor-toggle {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+}
+
+.sensor-toggle input {
+  display: none;
+}
+
+.sensor-toggle label {
+  display: block;
+  width: 48px;
+  height: 26px;
+  background: #cbd5e1;
+  border-radius: 13px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.35s ease;
+}
+
+.sensor-toggle label::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: #ffffff;
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+  transition: left 0.35s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sensor-toggle input:checked+label {
+  background: #0f766e;
+}
+
+.sensor-toggle input:checked+label::after {
+  left: 25px;
+}
+
+/* ========== Illustration Section ========== */
+.sensors-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding-top: 4rem;
+}
+
+.illustration-placeholder {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sensor-illustration {
+  width: 100%;
+  height: auto;
+  max-width: 500px;
+  object-fit: contain;
+}
+
+/* ========== Responsive Design ========== */
+@media (max-width: 1200px) {
+  .sensors-wrapper {
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .sensors-left {
+    width: 100%;
+  }
+
+  .sensors-right {
+    width: 100%;
+    min-height: 300px;
+  }
+}
+
+@media (max-height: 800px) {
+  .sensors {
+    padding: 1rem;
+  }
+
+  .sensors-title {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .sensors-list {
+    gap: 0.5rem;
+  }
+
+  .sensor-item {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .sensors-wrapper {
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .sensors {
+    padding: 0.75rem;
+    min-height: 100vh;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    background: #ffffff;
+  }
+
+  .sensors-wrapper {
+    margin-left: 0;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .sensors-left {
+    width: 100%;
+  }
+
+  .sensors-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .connection-status {
+    margin-bottom: 1rem;
+  }
+
+  .sensors-list {
+    gap: 0.5rem;
+  }
+
+  .sensor-item {
+    padding: 0.75rem;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .sensor-icon {
+    font-size: 1.25rem;
+  }
+
+  .sensor-name {
+    font-size: 0.9rem;
+  }
+
+  .sensor-value {
+    font-size: 0.75rem;
+  }
+
+  /* Hide illustration on mobile to save space */
+  .sensors-right {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .sensors {
+    padding: 0.5rem;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  .sensors-title {
+    font-size: 1.3rem;
+  }
+
+  .sensor-item {
+    padding: 0.6rem;
+  }
+
+  .sensor-toggle {
+    width: 40px;
+    height: 22px;
+  }
+
+  .sensor-toggle label {
+    width: 40px;
+    height: 22px;
+    border-radius: 11px;
+  }
+
+  .sensor-toggle label::after {
+    width: 16px;
+    height: 16px;
+    top: 3px;
+    left: 3px;
+  }
+
+  .sensor-toggle input:checked+label::after {
+    left: 21px;
+  }
+}
