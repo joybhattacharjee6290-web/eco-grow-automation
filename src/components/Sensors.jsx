@@ -7,7 +7,7 @@ export default function Sensors() {
 
   const sensors = [
     { id: 'waterPump', name: 'Water Pump', icon: '💧', status: sensorStates.waterPump ? 'Active' : 'Inactive' },
-    { id: 'phSensor', name: 'PH Sensor', icon: '⚗️', value: `${formattedData.phLevel} pH` },
+    { id: 'waterLevel', name: 'Water Level', icon: '🌊', value: `${formattedData.waterLevel} L` },
     { id: 'ldrSensor', name: 'LDR Sensor', icon: '☀️', value: `${formattedData.sunlight} lux` },
     { id: 'airQuality', name: 'Air Quality Sensor', icon: '🌬️', value: `${formattedData.airQuality} AQI` },
     { id: 'temperature', name: 'Temperature Sensor', icon: '🌡️', value: `${formattedData.temperature}°C` },
@@ -59,7 +59,7 @@ export default function Sensors() {
 
         <div className="sensors-right">
           <div className="illustration-placeholder">
-            <img src={smartGreenhouse} alt="Smart Greenhouse" className="sensor-illustration" />
+            <img src='/cuate.png' alt="Smart Greenhouse" className="sensor-illustration" />
           </div>
         </div>
       </div>

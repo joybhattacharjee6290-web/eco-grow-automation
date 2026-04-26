@@ -20,7 +20,7 @@ function App() {
         <aside className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
           <div className="sidebar-header">
             <div className="logo">
-              <span className="logo-icon">🌱</span>
+              <span className="logo-icon"><img src='/mdi_leaf.png'/></span>
               <span className="logo-text">Eco Grow Automation</span>
             </div>
             <button
@@ -36,24 +36,27 @@ function App() {
               className={`nav-tab ${activeTab === 'overview' ? 'active' : ''}`}
               onClick={() => handleTabClick('overview')}
             >
-              <span className="nav-icon">📊</span>
+              <span className="nav-icon"><img src='Overview.png'/></span>
               <span className="nav-label">Overview</span>
             </button>
             <button
               className={`nav-tab ${activeTab === 'sensors' ? 'active' : ''}`}
               onClick={() => handleTabClick('sensors')}
             >
-              <span className="nav-icon">📡</span>
+              <span className="nav-icon"><img src='Sensor.png'/></span>
               <span className="nav-label">Sensors</span>
             </button>
             <button
               className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
               onClick={() => handleTabClick('analytics')}
             >
-              <span className="nav-icon">📈</span>
+              <span className="nav-icon"><img src='Analytics.png'/></span>
               <span className="nav-label">Analytics</span>
             </button>
           </nav>
+          <div className="sidebar-image">
+          <img src="/amico.png" alt="plant" />
+          </div>
         </aside>
 
         {/* Mobile overlay */}

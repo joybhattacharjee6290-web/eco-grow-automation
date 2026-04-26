@@ -15,7 +15,7 @@
 /* ========== Sidebar ========== */
 .sidebar {
   width: 260px;
-  background: #ffffff;
+  background: #1D4C43;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
@@ -68,7 +68,7 @@
 .logo-text {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #16a34a;
+  color: #ffffff;
   text-align: center;
   line-height: 1.3;
 }
@@ -87,7 +87,7 @@
   background: transparent;
   border: none;
   border-left: 3px solid transparent;
-  color: #6b7280;
+  color: #ffffff;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -116,6 +116,18 @@
   color: #059669;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+.nav-icon img {
+  width: 22px;
+  height: 22px;
+  filter: brightness(0) invert(1); /* makes it white */
+  transition: filter 0.3s ease;
+}
+
+/* Hover & Active */
+.nav-tab:hover .nav-icon img,
+.nav-tab.active .nav-icon img {
+  filter: brightness(0) saturate(100%) invert(35%) sepia(65%) saturate(500%) hue-rotate(120deg);
 }
 
 /* ========== Sidebar Overlay ========== */
@@ -190,6 +202,7 @@
   height: 100vh;
   overflow: hidden;
   max-width: calc(100vw - 260px);
+  background-color : #ffffff;
 }
 
 /* ========== Responsive - Tablet ========== */
@@ -319,4 +332,20 @@
   .mobile-title {
     font-size: 1.1rem;
   }
+}
+.header-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sidebar-image {
+  margin-top: 180px;
+  display: flex;
+  justify-content: center;
+
+}
+
+.sidebar-image img {
+  width: 160px;
 }
