@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo,useState } from 'react';
 import './Analytics.css';
 import { useSensorDataContext } from '../hooks/useSensorData.jsx';
 
@@ -30,25 +30,93 @@ const getSmoothPath = (points, height, padding) => {
   return d;
 };
 
-function LineChart({ data, color, showBars = false }) {
-  if (showBars) {
-    const max = Math.max(...data);
-    const min = Math.min(...data);
-    const range = max - min || 1;
+//function LineChart({ data, color, showBars = false }) 
+function LineChart({ data, color, showBars = false, yMin = null, yMax = null, unit = '' , label = ''}){
+ const [hoverIndex, setHoverIndex] = useState(null);
+ const getTimeLabel = (index) => {
+  const now = new Date();
+  const minutesAgo = Math.floor((data.length - 1 - index) * 5);
 
+
+  const pointTime = new Date(now.getTime() - minutesAgo * 60000);
+  const dateStr = pointTime.toLocaleDateString([], {
+    day: '2-digit',
+    month: 'short'
+  });
+  const timeStr = pointTime.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+
+  return minutesAgo === 0
+    ? `${dateStr}, ${timeStr} (Now)`
+    : `${dateStr}, ${timeStr} (${minutesAgo}m ago)`;
+
+};
+  if (showBars) {
+    const min = yMin !== null ? yMin : Math.min(...data);
+    const max = yMax !== null ? yMax : Math.max(...data);
+    const range = max - min || 1;
+    const limitedData = data.slice(-5); // last 5 
     return (
-      <div className="bar-chart">
-        {data.map((value, index) => {
-          const height = ((value - min) / range) * 80 + 20; // Min 20% height
-          return (
-            <div key={index} className="bar-wrapper">
-              <div
-                className={`bar ${color}`}
-                style={{ height: `${height}%`, transition: 'height 0.5s ease-out' }}
-              />
-            </div>
-          );
-        })}
+      <div style={{ display: 'flex', height: '100%' }}>
+  
+        {/* ✅ Y AXIS WITH FIXED SCALE */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          fontSize: '10px',
+          color: '#64748b',
+          marginRight: '6px'
+        }}>
+          {[0, 1, 2, 3, 4].map((i) => {
+            const value = Math.round(min + (range * (4 - i)) / 4);
+            return (
+              <span key={i}>
+                {value}{i === 4 ? ` ${unit}` : ''}
+              </span>
+            );
+          })}
+        </div>
+  
+        {/* ✅ GRAPH AREA */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+  
+          {/* BARS */}
+          <div className="bar-chart" style={{ flex: 1 }}>
+            {limitedData.map((value, index) => {
+              const height = ((value - min) / range) * 90;
+              return (
+                <div key={index} className="bar-wrapper">
+                  <div
+                    className={`bar ${color}`}
+                    style={{
+                      height: `${height}%`,
+                      transition: 'height 0.5s ease-out'
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+  
+          {/* ✅ X AXIS */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: '10px',
+            color: '#64748b',
+            marginTop: '4px'
+          }}>
+          {limitedData.map((_, i) => {
+            const minutesAgo = (limitedData.length - 1 - i) * 5;
+            return <span key={i}>{minutesAgo === 0 ? 'Now' : `${minutesAgo}m`}</span>;
+          })}
+          </div>
+  
+        </div>
       </div>
     );
   }
@@ -56,47 +124,202 @@ function LineChart({ data, color, showBars = false }) {
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
-
   const width = 300;
   const height = 120;
-  const padding = 15;
+  const padding = 20;
+  
   const chartWidth = width - padding * 2;
   const chartHeight = height - padding * 2;
-
+  
   const points = data.map((value, index) => {
     const x = padding + (index / (data.length - 1)) * chartWidth;
     const y = height - padding - ((value - min) / range) * chartHeight;
     return [x, y];
   });
-
-  const pathD = getSmoothPath(points, height, padding);
-  const fillPathD = `${pathD} L ${width - padding},${height - padding} L ${padding},${height - padding} Z`;
-
+  
+  const pathD = getSmoothPath(points,height, padding);
+  const getInterpolatedValue = () => {
+    if (hoverIndex === null) return null;
+  
+    const leftIndex = Math.floor(hoverIndex);
+    const rightIndex = Math.ceil(hoverIndex);
+  
+    if (leftIndex === rightIndex) return data[leftIndex];
+  
+    const ratio = hoverIndex - leftIndex;
+  
+    return data[leftIndex] + (data[rightIndex] - data[leftIndex]) * ratio;
+  };
+  
+  const interpolatedValue = getInterpolatedValue();
+  
+  const getInterpolatedPoint = () => {
+    if (hoverIndex === null) return null;
+  
+    const leftIndex = Math.floor(hoverIndex);
+    const rightIndex = Math.ceil(hoverIndex);
+  
+    const ratio = hoverIndex - leftIndex;
+  
+    const [x1, y1] = points[leftIndex];
+    const [x2, y2] = points[rightIndex] || points[leftIndex];
+  
+    return [
+      x1 + (x2 - x1) * ratio,
+      y1 + (y2 - y1) * ratio
+    ];
+  };
+  
+  const activePoint = getInterpolatedPoint();
+  
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="line-chart-svg">
-      <defs>
-        <linearGradient id={`gradient-${color}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" className={`stop-${color}-top`} />
-          <stop offset="100%" className={`stop-${color}-bottom`} />
-        </linearGradient>
-      </defs>
+    
+    <svg viewBox={`0 0 ${width} ${height}`} className="line-chart-svg" 
+    onMouseMove={(e) => {
+      const svg = e.currentTarget;
+    
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+    
+      const cursor = pt.matrixTransform(svg.getScreenCTM().inverse());
+    
+      const x = cursor.x;
+    
+      const clampedX = Math.max(padding, Math.min(width - padding, x));
+    
+      const step = chartWidth / (data.length - 1);
+      const index = (clampedX - padding) / step;
+    
+      setHoverIndex(index);
+    }}
+    onMouseLeave={() => setHoverIndex(null)}>
 
-      <path
-        d={fillPathD}
-        className={`chart-fill ${color}`}
-        fill={`url(#gradient-${color})`}
-        style={{ transition: 'all 0.5s ease-out' }}
+  
+      {/* ✅ Y AXIS */}
+      <line
+        x1={padding}
+        y1={padding}
+        x2={padding}
+        y2={height - padding}
+        stroke="#94a3b8"
+        strokeWidth="1"
       />
-
+  
+      {/* ✅ X AXIS */}
+      <line
+        x1={padding}
+        y1={height - padding}
+        x2={width - padding}
+        y2={height - padding}
+        stroke="#94a3b8"
+        strokeWidth="1"
+      />
+  
+      {/* ✅ Y LABELS (values) */}
+      {[0, 1, 2, 3].map((i) => {
+        const y = padding + (i / 3) * chartHeight;
+        const value = Math.round(min + (range * (3 - i)) / 3);
+  
+        return (
+          <text
+            key={i}
+            x={padding - 5}
+            y={y + 3}
+            fontSize="8"
+            textAnchor="end"
+            fill="#64748b"
+          >
+            {value}
+          </text>
+        );
+      })}
+  
+      {/* ✅ X LABELS (index/time) */}
+      {data.map((_, i) => {
+        const x = padding + (i / (data.length - 1)) * chartWidth;
+  
+        return (
+          <text
+            key={i}
+            x={x}
+            y={height - padding + 10}
+            fontSize="8"
+            textAnchor="middle"
+            fill="#64748b"
+          >
+            {i + 1}
+          </text>
+        );
+      })}
+  
+      {/* ✅ YOUR EXISTING LINE */}
       <path
         d={pathD}
         fill="none"
         className={`chart-line ${color}`}
-        strokeWidth="3"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        style={{ transition: 'all 0.5s ease-out' }}
       />
+  
+      {/* ✅ POINTS (optional but useful) */}
+      {points.map(([x, y], i) => (
+        <circle
+          key={i}
+          cx={x}
+          cy={y}
+          r="2"
+          fill="white"
+          className={`chart-line ${color}`}
+        />
+      ))}
+      {activePoint && (
+        <g>
+          {/* Vertical line */}
+          <line
+            x1={activePoint[0]}
+            y1={padding}
+            x2={activePoint[0]}
+            y2={height - padding}
+            stroke="#cbd5e1"
+            strokeDasharray="3 3"
+          />
+      
+          {/* Moving dot */}
+          <circle
+            cx={activePoint[0]}
+            cy={activePoint[1]}
+            r="5"
+            fill="#fff"
+            stroke="#6366f1"
+            strokeWidth="2"
+          />
+      
+          {/* Tooltip */}
+          <g transform={`translate(${activePoint[0] + 10}, ${activePoint[1] - 45})`}>
+            <rect
+              width="140"
+              height="45"
+              rx="10"
+              fill="#ffffff"
+              stroke="#e2e8f0"
+              style={{
+                filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.15))"
+              }}
+            />
+      
+            <text x="10" y="18" fontSize="11" fill="#0f172a" fontWeight="600">
+            {label}: {interpolatedValue?.toFixed(1)} {unit}
+          </text>
+      
+            <text x="10" y="32" fontSize="9" fill="#64748b">
+               {getTimeLabel(hoverIndex)}
+            </text>
+          </g>
+        </g>
+      )}
+      
     </svg>
   );
 }
@@ -118,8 +341,8 @@ export default function Analytics() {
     {
       id: 2,
       name: 'Sunlight',
-      value: formattedData.sunlight.toString(),
-      unit: 'lx',
+      value: `${formattedData.sunlight.toString()} lx`,
+      unit: '',
       color: 'yellow',
       chartData: historicalData.sunlight || [600, 650, 700, 680, 720, 760, 750, 800],
       grid: 'top-right',
@@ -127,19 +350,21 @@ export default function Analytics() {
     },
     {
       id: 3,
-      name: 'PH Level',
-      value: formattedData.phLevel,
-      unit: 'pH',
+      name: 'Water Level',
+      value: `${formattedData.waterLevel}%`,
+      unit: '',
       color: 'blue',
-      chartData: historicalData.phLevel || [5, 6, 5, 7, 6, 5, 6, 7],
+      chartData: historicalData.waterLevel || [40, 45, 50, 48, 52, 55, 53, 50],
       grid: 'middle-left',
-      showBars: true
+      showBars: true,
+      yMin: 0,
+      yMax: 100
     },
     {
       id: 4,
       name: 'Temperature',
-      value: `${formattedData.temperature}°`,
-      unit: 'C',
+      value: `${formattedData.temperature}°C`,
+      unit: '',
       color: 'orange',
       chartData: historicalData.temperature || [22, 23, 24, 25, 26, 25, 24, 23],
       grid: 'middle-center',
@@ -153,13 +378,15 @@ export default function Analytics() {
       color: 'teal',
       chartData: historicalData.humidity || [60, 62, 65, 63, 64, 66, 65, 64],
       grid: 'middle-right',
-      showBars: true
+      showBars: true,
+      yMin: 0,
+      yMax: 100
     },
     {
       id: 6,
       name: 'Air Quality',
-      value: formattedData.airQuality.toString(),
-      unit: 'AQI',
+      value: `${formattedData.airQuality.toString()} AQI`,
+      unit: '',
       color: 'purple',
       chartData: historicalData.airQuality || [85, 86, 88, 87, 89, 90, 88, 87],
       grid: 'bottom-left',
@@ -168,8 +395,8 @@ export default function Analytics() {
     {
       id: 7,
       name: 'Rainfall',
-      value: formattedData.rainfall.toString(),
-      unit: 'mm',
+      value: `${formattedData.rainfall.toString()} mm`,
+      unit: '',
       color: 'cyan',
       chartData: historicalData.rainfall || [2, 3, 5, 4, 6, 7, 6, 8],
       grid: 'bottom-right',
@@ -200,7 +427,15 @@ export default function Analytics() {
               </div>
             </div>
             <div className="chart-wrapper">
-              <LineChart data={item.chartData} color={item.color} showBars={item.showBars} />
+            <LineChart 
+              data={item.chartData} 
+              color={item.color} 
+              showBars={item.showBars}
+              yMin={item.yMin}
+              yMax={item.yMax}
+              unit={item.unit}
+              label={item.name}
+            />
             </div>
           </div>
         ))}

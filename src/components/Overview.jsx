@@ -91,7 +91,7 @@ export default function Overview() {
   const tempPercent = Math.min(100, (formattedData.temperature / 50) * 100);
   const humidityPercent = formattedData.humidity;
   const soilPercent = formattedData.soilMoisture;
-  const phPercent = (formattedData.phLevel / 14) * 100;
+  const waterLevel = formattedData.waterLevel;
   const sunlightPercent = Math.min(100, (formattedData.sunlight / 1200) * 100);
   const airQualityPercent = formattedData.airQuality;
 
@@ -108,20 +108,20 @@ export default function Overview() {
           <div className="date-value">{dateStr}</div>
           <div className="last-update">Last update: {lastUpdated.toLocaleTimeString()}</div>
         </div>
-
+            
         <div className="card temp-card">
           <h3 className="card-label">Temperature</h3>
           <div className="donut-wrapper">
             <Donut size={100} stroke={12} value={tempPercent} isDark={true} center={`${formattedData.temperature}°`} />
           </div>
         </div>
-
+        
         <div className="card humidity-card">
           <h3 className="card-label">Humidity</h3>
           <div className="donut-wrapper">
             <Donut size={100} stroke={12} value={humidityPercent} isDark={false} center={formattedData.humidity} />
           </div>
-        </div>
+        </div>    
 
         <div className="card notifications-card">
           <h3 className="card-label">Notifications</h3>
@@ -144,10 +144,10 @@ export default function Overview() {
         </div>
 
         {/* Row 2 */}
-        <div className="card ph-card">
-          <h3 className="card-label">PH Level</h3>
+        <div className="card waterLevel-card">
+          <h3 className="card-label">Water Level</h3>
           <div className="donut-wrapper">
-            <Donut size={100} stroke={12} value={phPercent} isDark={false} center={formattedData.phLevel} />
+            <Donut size={100} stroke={12} value={waterLevel} isDark={false} center={formattedData.waterLevel} />
           </div>
         </div>
 
@@ -156,10 +156,10 @@ export default function Overview() {
           <div className="donut-wrapper">
             <Donut size={100} stroke={12} value={soilPercent} isDark={true} center={`${formattedData.soilMoisture}%`} />
           </div>
-        </div>
+        </div>     
 
         <div className="card rainfall-card">
-          <h3 className="card-label rainfall-label">Rainfall</h3>
+          <h1 className="card-label rainfall-label">Rainfall</h1>
           <div className="rainfall-content">
             <div className="rainfall-value">{formattedData.rainfall}%</div>
             <div className="rainfall-icon">☁️</div>
@@ -188,7 +188,7 @@ export default function Overview() {
             <Donut size={100} stroke={12} value={airQualityPercent} isDark={true} center={`${formattedData.airQuality}%`} />
           </div>
         </div>
-
+       
         <div className="card water-card">
           <h3 className="card-label">Water</h3>
           <div className="water-content">

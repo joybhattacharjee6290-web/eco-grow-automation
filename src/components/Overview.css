@@ -11,7 +11,8 @@
 
 .overview-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+ grid-template-columns: repeat(4, 1fr);
+ //grid-template-columns:40% 30% 30%;
   grid-template-rows: repeat(3, 1fr);
   gap: 0.75rem;
   max-width: 100%;
@@ -48,8 +49,9 @@
 
 /* ========== Color Scheme for Cards ========== */
 .time-date-card {
-  background: linear-gradient(135deg, #e6fdf0 0%, #d1fae5 100%);
-  grid-column: 1 / 2;
+ // background: linear-gradient(135deg, #e6fdf0 0%, #d1fae5 100%);
+  background-color : #E7F0D2;
+  grid-column: 1/2;
 }
 
 .time-date-card .card-label {
@@ -58,7 +60,8 @@
 
 .temp-card {
   background: #0f766e;
-  grid-column: 2 / 3;
+  //background-color: #0D625E
+  //grid-column: 2 / 3;
 }
 
 .temp-card .card-label {
@@ -66,8 +69,9 @@
 }
 
 .humidity-card {
-  background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
-  grid-column: 3 / 4;
+  //background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
+  background-color: #ABCB89;
+ // grid-column: 3 / 4;
 }
 
 .humidity-card .card-label {
@@ -86,18 +90,19 @@
 }
 
 /* Row 2 */
-.ph-card {
-  background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
-  grid-column: 1 / 2;
+.waterLevel-card {
+  //background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
+  background-color: #ABCB89;
+ // grid-column: 1 / 2;
 }
 
-.ph-card .card-label {
+.waterLevel-card .card-label {
   color: #166534;
 }
 
 .soil-card {
   background: #0f766e;
-  grid-column: 2 / 3;
+  //grid-column: 2 / 3;
 }
 
 .soil-card .card-label {
@@ -105,18 +110,22 @@
 }
 
 .rainfall-card {
-  background: linear-gradient(135deg, #e6fdf0 0%, #d1fae5 100%);
+  //background: linear-gradient(135deg, #e6fdf0 0%, #d1fae5 100%);
+  background-color:#E7F0D2;
   grid-column: 3 / 4;
 }
 
 .rainfall-card .card-label {
-  color: #0f766e;
-  display: none;
+ color: #0f766e;
+  //color: #81B214;
+  //display: none;
+  display: block !important;
 }
 
 /* Row 3 */
 .analytics-card {
-  background: linear-gradient(135deg, #e6fdf0 0%, #d1fae5 100%);
+  //background: linear-gradient(135deg, #e6fdf0 0%, #d1fae5 100%);
+  background-color : #E7F0D2 !important;
   grid-column: 1 / 2;
 }
 
@@ -125,8 +134,9 @@
 }
 
 .sunlight-card {
-  background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
-  grid-column: 2 / 3;
+  //background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
+  background-color: #ABCB89;
+  //grid-column: 2 / 3;
 }
 
 .sunlight-card .card-label {
@@ -135,7 +145,7 @@
 
 .air-quality-card {
   background: #0f766e;
-  grid-column: 3 / 4;
+  //grid-column: 3 / 4;
 }
 
 .air-quality-card .card-label {
@@ -221,6 +231,14 @@
 }
 
 /* ========== Rainfall Card ========== */
+.rainfall-label {
+  font-size: 1.8rem;
+  font-weight: 750;
+  color: #81B214;        
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.5px;
+}
+
 .rainfall-content {
   display: flex;
   align-items: center;
@@ -231,7 +249,8 @@
 .rainfall-value {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #7fb069;
+  //color: #7fb069;
+  color:#81B214;
 }
 
 .rainfall-icon {
@@ -372,6 +391,7 @@
     height: 100%;
     gap: 1rem;
   }
+
 
   .card {
     min-height: 0;
@@ -566,6 +586,7 @@
   .water-card {
     grid-column: span 2;
     min-height: auto;
+    background-color: #E7F0D2;
   }
 
   .water-content {
