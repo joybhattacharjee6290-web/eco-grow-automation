@@ -90,13 +90,13 @@
 }
 
 /* Row 2 */
-.waterLevel-card {
+.sunlight-card {
   //background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
   background-color: #ABCB89;
  // grid-column: 1 / 2;
 }
 
-.waterLevel-card .card-label {
+.sunlight-card .card-label {
   color: #166534;
 }
 
@@ -109,13 +109,13 @@
   color: #ffffff;
 }
 
-.rainfall-card {
+.aqi-card {
   //background: linear-gradient(135deg, #e6fdf0 0%, #d1fae5 100%);
   background-color:#E7F0D2;
   grid-column: 3 / 4;
 }
 
-.rainfall-card .card-label {
+.aqi-card .card-label {
  color: #0f766e;
   //color: #81B214;
   //display: none;
@@ -133,13 +133,13 @@
   color: #0f766e;
 }
 
-.sunlight-card {
+.co2-card {
   //background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
   background-color: #ABCB89;
   //grid-column: 2 / 3;
 }
 
-.sunlight-card .card-label {
+.co2-card .card-label {
   color: #166534;
 }
 
@@ -231,7 +231,7 @@
 }
 
 /* ========== Rainfall Card ========== */
-.rainfall-label {
+.aqi-label {
   font-size: 1.8rem;
   font-weight: 750;
   color: #81B214;        
@@ -239,22 +239,30 @@
   letter-spacing: 0.5px;
 }
 
-.rainfall-content {
+.aqi-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex: 1;
 }
 
-.rainfall-value {
+.aqi-value {
   font-size: 2.5rem;
   font-weight: 700;
   //color: #7fb069;
   color:#81B214;
+  margin-left:1rem;
 }
 
-.rainfall-icon {
+.aqi-icon {
   font-size: 3rem;
+}
+.aqi-status {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f766e;
+  margin-top: 0.3rem;
+  margin-left:1rem;
 }
 
 /* ========== Analytics Card ========== */

@@ -18,6 +18,8 @@ const generateInitialData = () => ({
     sunlight: 500 + Math.random() * 500,
     airQuality: 60 + Math.random() * 30,
     waterLevel: 60 + Math.random() * 30,
+    co2: 400 + Math.random() * 200,   
+    no2: 20 + Math.random() * 30,     
 });
 
 // Generate historical data for charts (last 8 readings)
@@ -85,6 +87,8 @@ export function useSensorData(updateInterval = 3000) {
             rainfall: generateHistoricalData(sensorData.rainfall, 0, 100),
             sunlight: generateHistoricalData(sensorData.sunlight, 200, 1200),
             airQuality: generateHistoricalData(sensorData.airQuality, 40, 100),
+            co2: generateHistoricalData(sensorData.co2, 350, 1200),
+            no2: generateHistoricalData(sensorData.no2, 10, 80),
         });
 
         setNotifications(generateNotifications(sensorData));
@@ -100,6 +104,8 @@ export function useSensorData(updateInterval = 3000) {
                 sunlight: fluctuate(prev.sunlight, 200, 1200, 0.12),
                 airQuality: fluctuate(prev.airQuality, 40, 100, 0.07),
                 waterLevel: fluctuate(prev.waterLevel, 20, 100, 0.04),
+                co2: fluctuate(prev.co2, 350, 1200, 0.06),
+                no2: fluctuate(prev.no2, 10, 80, 0.08),
             }));
             setLastUpdated(new Date());
         }, updateInterval);
@@ -129,6 +135,9 @@ export function useSensorData(updateInterval = 3000) {
         sunlight: Math.round(sensorData.sunlight),
         airQuality: Math.round(sensorData.airQuality),
         waterLevel: Math.round(sensorData.waterLevel),
+        co2: Math.round(sensorData.co2),
+        no2: Math.round(sensorData.no2),
+
     };
 
     return {
