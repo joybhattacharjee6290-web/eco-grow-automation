@@ -65,29 +65,9 @@ function AppShell() {
           </button>
         </nav>
 
-        {/* ── Demo Mode Toggle ─────────────────────────────────── */}
-        <div className="demo-mode-section">
-          <div className="demo-mode-toggle">
-            <div className="demo-mode-info">
-              <span className="demo-mode-icon">{demoMode ? '🧪' : '📡'}</span>
-              <div className="demo-mode-text">
-                <span className="demo-mode-label">{demoMode ? 'Demo Mode' : 'Live Mode'}</span>
-                <span className={`demo-mode-status ${isConnected ? 'online' : 'offline'}`}>
-                  {demoMode ? 'Simulated data' : isConnected ? 'Connected' : 'Connecting…'}
-                </span>
-              </div>
-            </div>
-            <div className="demo-toggle-switch">
-              <input
-                type="checkbox"
-                id="demo-mode-toggle"
-                checked={demoMode}
-                onChange={toggleDemoMode}
-              />
-              <label htmlFor="demo-mode-toggle"></label>
-            </div>
-          </div>
-        </div>
+
+        <ConnectionStatus />
+      
 
         <div className="sidebar-image">
         <img src="/amico.png" alt="plant" />
