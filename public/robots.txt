@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://ecogrow-automation.surge.sh/sitemap.xml
