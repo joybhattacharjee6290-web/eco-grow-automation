@@ -354,13 +354,13 @@ export default function Analytics() {
     },
     {
       id: 3,
-      name: 'Carbon Dioxide',
+      name: 'Carbon Dioxide(CO2)',
       value: `${formattedData.co2}%`,
       unit: '',
       color: 'blue',
       chartData: historicalData.co2 || [40, 45, 50, 48, 52, 55, 53, 50],
       grid: 'middle-left',
-      showBars: false,
+      showBars: true,
     },
     {
       id: 4,
@@ -396,7 +396,7 @@ export default function Analytics() {
     },
     {
       id: 7,
-      name: 'Ammonia',
+      name: 'Ammonia(NH3)',
       value: `${formattedData.no2}%`,
       unit: '',
       color: 'cyan',
