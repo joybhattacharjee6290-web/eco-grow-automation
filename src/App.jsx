@@ -3,7 +3,16 @@ import './App.css';
 import Overview from './components/Overview';
 import Sensors from './components/Sensors';
 import Analytics from './components/Analytics';
-import { SensorDataProvider } from './hooks/useSensorData.jsx';
+import { SensorDataProvider, useSensorDataContext } from './hooks/useSensorData.jsx';
+
+function ConnectionStatus() {
+  return (
+    <div className="connection-status connected">
+      <span className="status-dot"></span>
+      Connected
+    </div>
+  );
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -54,6 +63,8 @@ function App() {
               <span className="nav-label">Analytics</span>
             </button>
           </nav>
+          <ConnectionStatus />
+          
           <div className="sidebar-image">
           <img src="/amico.png" alt="plant" />
           </div>

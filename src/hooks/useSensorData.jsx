@@ -1,177 +1,214 @@
-import { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  createContext,
+  useContext,
+} from "react";
 
 // Utility to clamp value within bounds
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 // Simulate small fluctuation around a base value
 const fluctuate = (current, min, max, volatility = 0.1) => {
-    const change = (Math.random() - 0.5) * 2 * volatility * (max - min);
-    return clamp(current + change, min, max);
+  const change = (Math.random() - 0.5) * 2 * volatility * (max - min);
+  return clamp(current + change, min, max);
 };
 
 // Initial dummy sensor data
 const generateInitialData = () => ({
-    temperature: 28 + Math.random() * 10,
-    humidity: 50 + Math.random() * 30,
-    soilMoisture: 30 + Math.random() * 40,
-    rainfall: 40 + Math.random() * 40,
-    sunlight: 500 + Math.random() * 500,
-    airQuality: 60 + Math.random() * 30,
-    waterLevel: 60 + Math.random() * 30,
-    co2: 400 + Math.random() * 200,   
-    no2: 20 + Math.random() * 30,     
+  temperature: 28 + Math.random() * 10,
+  humidity: 50 + Math.random() * 30,
+  soilMoisture: 30 + Math.random() * 40,
+  rainfall: 40 + Math.random() * 40,
+  sunlight: 10 + Math.random() * 10,
+  airQuality: 60 + Math.random() * 30,
+  waterLevel: 60 + Math.random() * 30,
+  co2: 0.05 + Math.random() * 0.2,
+  no2: 0.001 + Math.random() * 0.01,
 });
 
 // Generate historical data for charts (last 8 readings)
 const generateHistoricalData = (currentValue, min, max, points = 8) => {
-    const data = [];
-    let value = currentValue - (Math.random() * (max - min) * 0.3);
+  const data = [];
+  let value = currentValue - Math.random() * (max - min) * 0.3;
 
-    for (let i = 0; i < points; i++) {
-        value = fluctuate(value, min, max, 0.15);
-        data.push(Math.round(value * 10) / 10);
-    }
+  for (let i = 0; i < points; i++) {
+    value = fluctuate(value, min, max, 0.15);
+    //data.push(Math.round(value * 10) / 10);
+    data.push(Number(value.toFixed(3)));
+  }
 
-    data[data.length - 1] = Math.round(currentValue * 10) / 10;
-    return data;
+  //data[data.length - 1] = Math.round(currentValue * 10) / 10;
+  data[data.length - 1] = Number(currentValue.toFixed(3));
+  return data;
 };
 
 // Custom hook for sensor data management
 export function useSensorData(updateInterval = 3000) {
-    const [sensorData, setSensorData] = useState(generateInitialData);
-    const [historicalData, setHistoricalData] = useState({});
-    const [lastUpdated, setLastUpdated] = useState(new Date());
-    const [isConnected, setIsConnected] = useState(true);
+  const [sensorData, setSensorData] = useState(generateInitialData);
+  const [historicalData, setHistoricalData] = useState({});
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [isConnected, setIsConnected] = useState(true);
 
-    const [sensorStates, setSensorStates] = useState({
-        waterPump: true,
-        waterLevel: true,
-        ldrSensor: true,
-        airQuality: true,
-        temperature: true,
-        moisture: true,
-        rainfall: true,
+  const [sensorStates, setSensorStates] = useState({
+    waterPump: true,
+    waterLevel: true,
+    ldrSensor: true,
+    airQuality: true,
+    temperature: true,
+    moisture: true,
+    rainfall: true,
+  });
+
+  const [notifications, setNotifications] = useState([]);
+
+  const generateNotifications = useCallback((data) => {
+    const newNotifications = [];
+    const timestamp = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
     });
 
-    const [notifications, setNotifications] = useState([]);
+    if (data.soilMoisture < 35) {
+      newNotifications.push({
+        id: 1,
+        message: "Soil Moisture is low",
+        type: "warning",
+        time: timestamp,
+      });
+    }
+    if (data.temperature > 35) {
+      newNotifications.push({
+        id: 2,
+        message: "Temperature is high",
+        type: "warning",
+        time: timestamp,
+      });
+    }
+    if (data.waterLevel < 30) {
+      newNotifications.push({
+        id: 3,
+        message: "Water level is critical",
+        type: "critical",
+        time: timestamp,
+      });
+    }
+    if (data.airQuality < 50) {
+      newNotifications.push({
+        id: 4,
+        message: "Air quality is poor",
+        type: "warning",
+        time: timestamp,
+      });
+    }
+    if (data.soilMoisture >= 35 && data.soilMoisture <= 60) {
+      newNotifications.push({
+        id: 5,
+        message: "Soil moisture is optimal",
+        type: "success",
+        time: timestamp,
+      });
+    }
 
-    const generateNotifications = useCallback((data) => {
-        const newNotifications = [];
-        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return newNotifications.slice(0, 6);
+  }, []);
 
-        if (data.soilMoisture < 35) {
-            newNotifications.push({ id: 1, message: 'Soil Moisture is low', type: 'warning', time: timestamp });
-        }
-        if (data.temperature > 35) {
-            newNotifications.push({ id: 2, message: 'Temperature is high', type: 'warning', time: timestamp });
-        }
-        if (data.waterLevel < 30) {
-            newNotifications.push({ id: 3, message: 'Water level is critical', type: 'critical', time: timestamp });
-        }
-        if (data.airQuality < 50) {
-            newNotifications.push({ id: 4, message: 'Air quality is poor', type: 'warning', time: timestamp });
-        }
-        if (data.soilMoisture >= 35 && data.soilMoisture <= 60) {
-            newNotifications.push({ id: 5, message: 'Soil moisture is optimal', type: 'success', time: timestamp });
-        }
+  useEffect(() => {
+    setHistoricalData({
+      temperature: generateHistoricalData(sensorData.temperature, 20, 40),
+      humidity: generateHistoricalData(sensorData.humidity, 40, 90),
+      soilMoisture: generateHistoricalData(sensorData.soilMoisture, 20, 80),
+      waterLevel: generateHistoricalData(sensorData.waterLevel, 0, 100),
+      rainfall: generateHistoricalData(sensorData.rainfall, 0, 100),
+      sunlight: generateHistoricalData(sensorData.sunlight, 0, 100),
+      airQuality: generateHistoricalData(sensorData.airQuality, 40, 100),
+      co2: generateHistoricalData(sensorData.co2, 0.01, 0.3),
+      no2: generateHistoricalData(sensorData.no2, 0.001, 0.02),
+    });
 
-        return newNotifications.slice(0, 6);
-    }, []);
+    setNotifications(generateNotifications(sensorData));
+  }, [sensorData, generateNotifications]);
 
-    useEffect(() => {
-        setHistoricalData({
-            temperature: generateHistoricalData(sensorData.temperature, 20, 40),
-            humidity: generateHistoricalData(sensorData.humidity, 40, 90),
-            soilMoisture: generateHistoricalData(sensorData.soilMoisture, 20, 80),
-            waterLevel: generateHistoricalData(sensorData.waterLevel, 0, 100),
-            rainfall: generateHistoricalData(sensorData.rainfall, 0, 100),
-            sunlight: generateHistoricalData(sensorData.sunlight, 200, 1200),
-            airQuality: generateHistoricalData(sensorData.airQuality, 40, 100),
-            co2: generateHistoricalData(sensorData.co2, 350, 1200),
-            no2: generateHistoricalData(sensorData.no2, 10, 80),
-        });
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSensorData((prev) => ({
+        temperature: fluctuate(prev.temperature, 20, 40, 0.05),
+        humidity: fluctuate(prev.humidity, 40, 90, 0.08),
+        soilMoisture: fluctuate(prev.soilMoisture, 20, 80, 0.06),
+        rainfall: fluctuate(prev.rainfall, 0, 100, 0.1),
+        sunlight: fluctuate(prev.sunlight, 0, 100, 0.12),
+        airQuality: fluctuate(prev.airQuality, 40, 100, 0.07),
+        waterLevel: fluctuate(prev.waterLevel, 20, 100, 0.04),
+        co2: fluctuate(prev.co2, 0.01, 0.3, 0.05),
+        no2: fluctuate(prev.no2, 0.001, 0.02, 0.05),
+      }));
+      setLastUpdated(new Date());
+    }, updateInterval);
 
-        setNotifications(generateNotifications(sensorData));
-    }, [sensorData, generateNotifications]);
+    return () => clearInterval(interval);
+  }, [updateInterval]);
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setSensorData(prev => ({
-                temperature: fluctuate(prev.temperature, 20, 40, 0.05),
-                humidity: fluctuate(prev.humidity, 40, 90, 0.08),
-                soilMoisture: fluctuate(prev.soilMoisture, 20, 80, 0.06),
-                rainfall: fluctuate(prev.rainfall, 0, 100, 0.1),
-                sunlight: fluctuate(prev.sunlight, 200, 1200, 0.12),
-                airQuality: fluctuate(prev.airQuality, 40, 100, 0.07),
-                waterLevel: fluctuate(prev.waterLevel, 20, 100, 0.04),
-                co2: fluctuate(prev.co2, 350, 1200, 0.06),
-                no2: fluctuate(prev.no2, 10, 80, 0.08),
-            }));
-            setLastUpdated(new Date());
-        }, updateInterval);
+  const toggleSensor = useCallback((sensorId) => {
+    setSensorStates((prev) => ({
+      ...prev,
+      [sensorId]: !prev[sensorId],
+    }));
+  }, []);
 
-        return () => clearInterval(interval);
-    }, [updateInterval]);
+  const toggleWaterPump = useCallback(() => {
+    setSensorStates((prev) => ({
+      ...prev,
+      waterPump: !prev.waterPump,
+    }));
+  }, []);
 
-    const toggleSensor = useCallback((sensorId) => {
-        setSensorStates(prev => ({
-            ...prev,
-            [sensorId]: !prev[sensorId]
-        }));
-    }, []);
+  const formattedData = {
+    temperature: Number(sensorData.temperature.toFixed(1)),
+    humidity: Number(sensorData.humidity.toFixed(1)),
+    soilMoisture: Number(sensorData.soilMoisture.toFixed(0)),
+    rainfall: Number(sensorData.rainfall.toFixed(0)),
+    sunlight: Number(sensorData.sunlight.toFixed(0)),
+    airQuality: Number(sensorData.airQuality.toFixed(0)),
+    waterLevel: Number(sensorData.waterLevel.toFixed(0)),
+    co2: Number(sensorData.co2.toFixed(3)),
+    no2: Number(sensorData.no2.toFixed(3)),
+  };
 
-    const toggleWaterPump = useCallback(() => {
-        setSensorStates(prev => ({
-            ...prev,
-            waterPump: !prev.waterPump
-        }));
-    }, []);
-
-    const formattedData = {
-        temperature: Math.round(sensorData.temperature),
-        humidity: Math.round(sensorData.humidity),
-        soilMoisture: Math.round(sensorData.soilMoisture),
-        rainfall: Math.round(sensorData.rainfall),
-        sunlight: Math.round(sensorData.sunlight),
-        airQuality: Math.round(sensorData.airQuality),
-        waterLevel: Math.round(sensorData.waterLevel),
-        co2: Math.round(sensorData.co2),
-        no2: Math.round(sensorData.no2),
-
-    };
-
-    return {
-        sensorData,
-        formattedData,
-        historicalData,
-        sensorStates,
-        toggleSensor,
-        toggleWaterPump,
-        notifications,
-        isConnected,
-        lastUpdated,
-    };
+  return {
+    sensorData,
+    formattedData,
+    historicalData,
+    sensorStates,
+    toggleSensor,
+    toggleWaterPump,
+    notifications,
+    isConnected,
+    lastUpdated,
+  };
 }
 
 // React Context for sharing data across components
 const SensorDataContext = createContext(null);
 
 export function SensorDataProvider({ children, updateInterval = 3000 }) {
-    const sensorData = useSensorData(updateInterval);
+  const sensorData = useSensorData(updateInterval);
 
-    return (
-        <SensorDataContext.Provider value={sensorData}>
-            {children}
-        </SensorDataContext.Provider>
-    );
+  return (
+    <SensorDataContext.Provider value={sensorData}>
+      {children}
+    </SensorDataContext.Provider>
+  );
 }
 
 export function useSensorDataContext() {
-    const context = useContext(SensorDataContext);
-    if (!context) {
-        throw new Error('useSensorDataContext must be used within a SensorDataProvider');
-    }
-    return context;
+  const context = useContext(SensorDataContext);
+  if (!context) {
+    throw new Error(
+      "useSensorDataContext must be used within a SensorDataProvider"
+    );
+  }
+  return context;
 }
 
 export default useSensorData;

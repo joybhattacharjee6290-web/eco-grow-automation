@@ -123,13 +123,13 @@
 }
 
 /* Row 3 */
-.analytics-card {
+.rainfall-card {
   //background: linear-gradient(135deg, #e6fdf0 0%, #d1fae5 100%);
   background-color : #E7F0D2 !important;
   grid-column: 1 / 2;
 }
 
-.analytics-card .card-label {
+.rainfall-card .card-label {
   color: #0f766e;
 }
 
@@ -153,7 +153,7 @@
 }
 
 .water-card {
-  background: linear-gradient(135deg, #e6fdf0 0%, #d1fae5 100%);
+  background: #E7F0D2;
   grid-column: 4 / 5;
 }
 
@@ -206,6 +206,7 @@
   width: 100%;
   height: auto;
   max-width: 120px;
+
 }
 
 .donut-text {
@@ -230,7 +231,7 @@
   border-bottom: 1px solid rgba(167, 230, 214, 0.2);
 }
 
-/* ========== Rainfall Card ========== */
+/* ========== Aqi Card ========== */
 .aqi-label {
   font-size: 1.8rem;
   font-weight: 750;
@@ -255,7 +256,8 @@
 }
 
 .aqi-icon {
-  font-size: 3rem;
+  font-size: 4rem;
+  margin-right:1.5rem;
 }
 .aqi-status {
   font-size: 1rem;
@@ -265,25 +267,34 @@
   margin-left:1rem;
 }
 
-/* ========== Analytics Card ========== */
-.analytics-header {
+/* ========== Rainfall Card ========== */
+.rainfall-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
   width: 100%;
 }
 
-.analytics-subtitle {
-  font-size: 0.75rem;
-  color: #6b7280;
-  font-weight: 400;
+.rainfall-content {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.chart-placeholder {
-  width: 100%;
-  height: 80px;
-  margin-top: 0.5rem;
+.rain-icon {
+  font-size: 5rem;
+  line-height: 1;
+  display: inline-block;
+}
+.rainfall-status {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f766e;
+  text-align: center;
+  margin-top:0.5rem;
 }
 
 /* ========== Water Card ========== */
@@ -479,7 +490,7 @@
     height: 100px;
   }
 
-  .analytics-subtitle {
+  .rainfall-subtitle {
     font-size: 0.9rem;
   }
 }
@@ -614,12 +625,12 @@
     font-size: 0.75rem;
   }
 
-  .analytics-card {
+  .rainfall-card {
     grid-column: span 2;
     min-height: 100px;
   }
 
-  .analytics-header {
+  .rainfall-header {
     margin-bottom: 0.5rem;
   }
 

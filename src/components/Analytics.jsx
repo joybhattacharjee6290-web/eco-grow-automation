@@ -297,7 +297,7 @@ function LineChart({ data, color, showBars = false, yMin = null, yMax = null, un
           />
       
           {/* Tooltip */}
-          <g transform={`translate(${activePoint[0] + 10}, ${activePoint[1] - 45})`}>
+          <g transform={`translate(${activePoint[0] - 70}, ${activePoint[1] - 60})`}>
             <rect
               width="140"
               height="45"
@@ -310,7 +310,11 @@ function LineChart({ data, color, showBars = false, yMin = null, yMax = null, un
             />
       
             <text x="10" y="18" fontSize="11" fill="#0f172a" fontWeight="600">
-            {label}: {interpolatedValue?.toFixed(1)} {unit}
+            {label}: {
+              label === "Co2 Level" || label === "No2"
+                ? interpolatedValue?.toFixed(3)
+                : interpolatedValue?.toFixed(1)
+            } {unit}
           </text>
       
             <text x="10" y="32" fontSize="9" fill="#64748b">
@@ -341,7 +345,7 @@ export default function Analytics() {
     {
       id: 2,
       name: 'Sunlight',
-      value: `${formattedData.sunlight.toString()} lx`,
+      value: `${formattedData.sunlight.toString()}%`,
       unit: '',
       color: 'yellow',
       chartData: historicalData.sunlight || [600, 650, 700, 680, 720, 760, 750, 800],
@@ -350,15 +354,13 @@ export default function Analytics() {
     },
     {
       id: 3,
-      name: 'Water Level',
-      value: `${formattedData.waterLevel}%`,
+      name: 'Carbon Dioxide',
+      value: `${formattedData.co2}%`,
       unit: '',
       color: 'blue',
-      chartData: historicalData.waterLevel || [40, 45, 50, 48, 52, 55, 53, 50],
+      chartData: historicalData.co2 || [40, 45, 50, 48, 52, 55, 53, 50],
       grid: 'middle-left',
-      showBars: true,
-      yMin: 0,
-      yMax: 100
+      showBars: false,
     },
     {
       id: 4,
@@ -394,11 +396,11 @@ export default function Analytics() {
     },
     {
       id: 7,
-      name: 'Rainfall',
-      value: `${formattedData.rainfall.toString()} mm`,
+      name: 'Ammonia',
+      value: `${formattedData.no2}%`,
       unit: '',
       color: 'cyan',
-      chartData: historicalData.rainfall || [2, 3, 5, 4, 6, 7, 6, 8],
+      chartData: historicalData.no2 || [2, 3, 5, 4, 6, 7, 6, 8],
       grid: 'bottom-right',
       showBars: false
     },

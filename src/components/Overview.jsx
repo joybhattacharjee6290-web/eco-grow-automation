@@ -74,40 +74,6 @@ function Donut({
   );
 }
 
-// Simple line chart placeholder with dynamic data
-function ChartPlaceholder({ data }) {
-  const points = useMemo(() => {
-    if (!data || data.length === 0) return "0,70 280,70";
-    const max = Math.max(...data);
-    const min = Math.min(...data);
-    const range = max - min || 1;
-
-    return data
-      .map((value, index) => {
-        const x = (index / (data.length - 1)) * 280;
-        const y = 90 - ((value - min) / range) * 70;
-        return `${x},${y}`;
-      })
-      .join(" ");
-  }, [data]);
-
-  return (
-    <svg
-      className="chart-placeholder"
-      viewBox="0 0 280 100"
-      preserveAspectRatio="none"
-    >
-      <polyline
-        fill="none"
-        stroke="#10b981"
-        strokeWidth="1.5"
-        points={points}
-        style={{ transition: "all 0.5s ease-out" }}
-      />
-    </svg>
-  );
-}
-
 export default function Overview() {
   const {
     formattedData,
@@ -128,21 +94,28 @@ export default function Overview() {
   })}-${now.getFullYear()}`;
 
   // Convert values to percentages for donut charts
-  const tempPercent = Math.min(100, (formattedData.temperature / 50) * 100);
+  const tempPercent = formattedData.temperature;
   const humidityPercent = formattedData.humidity;
   const soilPercent = formattedData.soilMoisture;
-  const waterLevel = formattedData.waterLevel;
-  const sunlightPercent = Math.min(100, (formattedData.sunlight / 1200) * 100);
-  const airQualityPercent = formattedData.airQuality;
-  const co2Percent = Math.min(100, (formattedData.co2 / 1200) * 100);
-  const no2Percent = Math.min(100, (formattedData.no2 / 80) * 100);
+  //const waterLevel = formattedData.waterLevel;
+  const sunlightPercent = formattedData.sunlight;
+  //const airQualityPercent = formattedData.airQuality;
+  const co2Percent = formattedData.co2;
+  const no2Percent = formattedData.no2;
 
   const getAQIStatus = (aqi) => {
-    if (aqi <= 50) return "Good Air Quality";
-    if (aqi <= 100) return "Moderate Air Quality";
-    if (aqi <= 200) return "Unhealthy for Sensitive";
-    if (aqi <= 300) return "Poor Air Quality";
-    return "Very Poor / Hazardous";
+    if (aqi <= 100) return "Good Air Quality";
+    if (aqi <= 200) return "Moderate Air Quality";
+    return "Poor Air Quality";
+  };
+
+  const getRainStatus = (rainPct) => {
+    if (rainPct <= 0) return "No Rain";
+    if (rainPct <= 5) return "Humid Rain";
+    if (rainPct <= 20) return "Light Mist";
+    if (rainPct <= 50) return "Light Rain";
+    if (rainPct <= 85) return "Heavy Rain";
+    return "Strom";
   };
 
   return (
@@ -180,7 +153,7 @@ export default function Overview() {
               stroke={12}
               value={humidityPercent}
               isDark={false}
-              center={formattedData.humidity}
+              center={`${formattedData.humidity}%`}
             />
           </div>
         </div>
@@ -215,7 +188,7 @@ export default function Overview() {
               stroke={11}
               value={sunlightPercent}
               isDark={false}
-              center={`${Math.round(sunlightPercent)}%`}
+              center={`${formattedData.sunlight}%`}
             />
           </div>
         </div>
@@ -247,34 +220,50 @@ export default function Overview() {
         </div>
 
         {/* Row 3 */}
-        <div className="card analytics-card">
-          <div className="analytics-header">
-            <h3 className="card-label">Analytics</h3>
-            <span className="analytics-subtitle">Live data</span>
+        <div className="card rainfall-card">
+          <div className="rainfall-header">
+            <h3 className="card-label">Rainfall</h3>
           </div>
-          <ChartPlaceholder data={historicalData.temperature || []} />
+          <div className="rainfall-content">
+            <div>
+              {formattedData.rainfall <= 5 ? (
+                <span className="rain-icon">☀️</span>
+              ) : formattedData.rainfall <= 50 ? (
+                <span className="rain-icon">🌦️</span>
+              ) : formattedData.rainfall <= 85 ? (
+                <span className="rain-icon">🌧️</span>
+              ) : (
+                <span className="rain-icon">⛈️</span>
+              )}
+            </div>
+
+            <div className="rainfall-status">
+              {getRainStatus(formattedData.rainfall)}
+            </div>
+          </div>
         </div>
+
         <div className="card co2-card">
-          <h3 className="card-label">Co2 Level</h3>
+          <h3 className="card-label">Carbon Dioxide</h3>
           <div className="donut-wrapper">
             <Donut
-              size={100}
+              size={110}
               stroke={11}
               value={co2Percent}
               isDark={false}
-              center={`${co2Percent.toFixed(1)}%`}
+              center={`${formattedData.co2.toFixed(3)}%`}
             />
           </div>
         </div>
         <div className="card air-quality-card">
-          <h3 className="card-label">No2 Level</h3>
+          <h3 className="card-label">Ammonia</h3>
           <div className="donut-wrapper">
             <Donut
-              size={100}
+              size={110}
               stroke={12}
               value={no2Percent}
               isDark={true}
-              center={`${no2Percent.toFixed(1)}%`}
+              center={`${formattedData.no2.toFixed(3)}%`}
             />
           </div>
         </div>
