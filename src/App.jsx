@@ -9,7 +9,7 @@ function ConnectionStatus() {
   return (
     <div className="connection-status connected">
       <span className="status-dot"></span>
-      Connected
+      <span> Connected</span> 
     </div>
   );
 }

@@ -34,7 +34,7 @@
 }
 
 /* Connection Status */
-.connection-status {
+.connection-statusSensor {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -292,7 +292,7 @@
     margin-bottom: 0.5rem;
   }
 
-  .connection-status {
+  .connection-statusSensor {
     margin-bottom: 1rem;
   }
 
