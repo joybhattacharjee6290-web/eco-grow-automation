@@ -124,7 +124,6 @@
 
 /* Row 3 */
 .rainfall-card {
-  background: linear-gradient(135deg, #e6fdf0 0%, #d1fae5 100%);
   background-color : #E7F0D2 !important;
   grid-column: 1 / 2;
 }

@@ -1,25 +1,25 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { query, orderByChild, startAt, onValue, off } from 'firebase/database';
-import { historyLogsRef, authReady } from '../firebase.js';
-import { useSensorDataContext } from '../hooks/useSensorData.jsx';
-import './HistoricalLogs.css';
+import { useState, useEffect, useRef, useMemo } from "react";
+import { query, orderByChild, startAt, onValue, off } from "firebase/database";
+import { historyLogsRef, authReady } from "../firebase.js";
+import { useSensorDataContext } from "../hooks/useSensorData.jsx";
+import "./HistoricalLogs.css";
 
 // Firebase field name mapping (React key → RTDB field)
 const REACT_TO_RTDB = {
-  temperature: 'temp',
-  humidity: 'hum',
-  soilMoisture: 'moist',
-  sunlight: 'sun',
-  airQuality: 'air',
-  rainfall: 'rain',
-  waterLevel: 'water_level',
-  co2: 'co2',
-  nh3: 'nh3',
+  temperature: "temp",
+  humidity: "hum",
+  soilMoisture: "moist",
+  sunlight: "sun",
+  airQuality: "air",
+  rainfall: "rain",
+  waterLevel: "water_level",
+  co2: "co2",
+  nh3: "nh3",
 };
 
 // Smooth bezier path helper (same as Analytics)
 const getSmoothPath = (points) => {
-  if (points.length === 0) return '';
+  if (points.length === 0) return "";
   let d = `M ${points[0][0]},${points[0][1]}`;
   for (let i = 0; i < points.length - 1; i++) {
     const x0 = i > 0 ? points[i - 1][0] : points[i][0];
@@ -47,23 +47,29 @@ export default function HistoricalLogs({ sensor, onBack }) {
   const { demoMode } = useSensorDataContext();
 
   const {
-    name, color, unit = '', dataKey,
-    yMin = null, yMax = null, yPoints = 5, yDecimals = 0,
+    name,
+    color,
+    unit = "",
+    dataKey,
+    yMin = null,
+    yMax = null,
+    yPoints = 5,
+    yDecimals = 0,
   } = sensor;
 
   // ── Presentation seed data (auto-expires May 14 2026 00:00 IST) ─────────
   // After this date, empty buckets will show 0 instead of fake values.
-  const SEED_EXPIRY = new Date('2026-05-14T00:00:00+05:30').getTime();
+  const SEED_EXPIRY = new Date("2026-05-14T00:00:00+05:30").getTime();
 
   const generateSeedData = (key, count) => {
     const profiles = {
       soilMoisture: { base: 52, variance: 8 },
-      sunlight:     { base: 65, variance: 15 },
-      co2:          { base: 0.08, variance: 0.025 },
-      temperature:  { base: 28, variance: 4 },
-      humidity:     { base: 68, variance: 10 },
-      airQuality:   { base: 120, variance: 40 },
-      nh3:          { base: 0.05, variance: 0.02 },
+      sunlight: { base: 65, variance: 15 },
+      co2: { base: 0.08, variance: 0.025 },
+      temperature: { base: 28, variance: 4 },
+      humidity: { base: 68, variance: 10 },
+      airQuality: { base: 120, variance: 40 },
+      nh3: { base: 0.05, variance: 0.02 },
     };
     const p = profiles[key] || { base: 50, variance: 10 };
     const data = [];
@@ -71,7 +77,7 @@ export default function HistoricalLogs({ sensor, onBack }) {
     let seed = key.length * 1000 + 42;
     const pseudoRandom = () => {
       seed = (seed * 16807 + 0) % 2147483647;
-      return (seed / 2147483647) - 0.5;
+      return seed / 2147483647 - 0.5;
     };
     for (let i = 0; i < count; i++) {
       val += pseudoRandom() * p.variance * 0.6;
@@ -109,49 +115,53 @@ export default function HistoricalLogs({ sensor, onBack }) {
       const cutoff = Date.now() - 24 * 60 * 60 * 1000;
       const histQuery = query(
         historyLogsRef,
-        orderByChild('timestamp'),
+        orderByChild("timestamp"),
         startAt(cutoff)
       );
 
-      const handler = onValue(histQuery, (snap) => {
-        if (cancelled) return;
-        const raw = snap.val();
+      const handler = onValue(
+        histQuery,
+        (snap) => {
+          if (cancelled) return;
+          const raw = snap.val();
 
-        const useSeed = Date.now() < SEED_EXPIRY;
-        const seedValues = useSeed ? generateSeedData(dataKey, 24) : null;
+          const useSeed = Date.now() < SEED_EXPIRY;
+          const seedValues = useSeed ? generateSeedData(dataKey, 24) : null;
 
-        if (!raw) {
-          setHistData(useSeed ? seedValues : Array(24).fill(0));
-          setLoading(false);
-          return;
-        }
-
-        const rtdbField = REACT_TO_RTDB[dataKey] || dataKey;
-        const entries = Object.values(raw)
-          .filter((e) => e.timestamp)
-          .sort((a, b) => a.timestamp - b.timestamp);
-
-        const now = Date.now();
-        const buckets = Array.from({ length: 24 }, () => []);
-
-        for (const entry of entries) {
-          const hoursAgo = (now - entry.timestamp) / (60 * 60 * 1000);
-          const bucketIdx = 23 - Math.min(23, Math.floor(hoursAgo));
-          const value = entry[rtdbField] ?? 0;
-          buckets[bucketIdx].push(value);
-        }
-
-        // Real data takes priority; empty buckets use seed data during presentation window
-        const averaged = buckets.map((bucket, i) => {
-          if (bucket.length > 0) {
-            return bucket.reduce((a, b) => a + b, 0) / bucket.length;
+          if (!raw) {
+            setHistData(useSeed ? seedValues : Array(24).fill(0));
+            setLoading(false);
+            return;
           }
-          return useSeed && seedValues ? seedValues[i] : 0;
-        });
 
-        setHistData(averaged);
-        setLoading(false);
-      }, { onlyOnce: true });
+          const rtdbField = REACT_TO_RTDB[dataKey] || dataKey;
+          const entries = Object.values(raw)
+            .filter((e) => e.timestamp)
+            .sort((a, b) => a.timestamp - b.timestamp);
+
+          const now = Date.now();
+          const buckets = Array.from({ length: 24 }, () => []);
+
+          for (const entry of entries) {
+            const hoursAgo = (now - entry.timestamp) / (60 * 60 * 1000);
+            const bucketIdx = 23 - Math.min(23, Math.floor(hoursAgo));
+            const value = entry[rtdbField] ?? 0;
+            buckets[bucketIdx].push(value);
+          }
+
+          // Real data takes priority; empty buckets use seed data during presentation window
+          const averaged = buckets.map((bucket, i) => {
+            if (bucket.length > 0) {
+              return bucket.reduce((a, b) => a + b, 0) / bucket.length;
+            }
+            return useSeed && seedValues ? seedValues[i] : 0;
+          });
+
+          setHistData(averaged);
+          setLoading(false);
+        },
+        { onlyOnce: true }
+      );
 
       return () => {
         cancelled = true;
@@ -167,9 +177,7 @@ export default function HistoricalLogs({ sensor, onBack }) {
     const now = new Date();
     for (let i = 0; i < 24; i++) {
       const h = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
-      labels.push(
-        h.toLocaleTimeString([], { hour: 'numeric', hour12: true })
-      );
+      labels.push(h.toLocaleTimeString([], { hour: "numeric", hour12: true }));
     }
     return labels;
   }, []);
@@ -187,16 +195,19 @@ export default function HistoricalLogs({ sensor, onBack }) {
 
   const points = histData.map((value, i) => {
     const x = padding.left + (i / (histData.length - 1)) * chartWidth;
-    const y = padding.top + chartHeight - ((value - cMin) / cRange) * chartHeight;
+    const y =
+      padding.top + chartHeight - ((value - cMin) / cRange) * chartHeight;
     return [x, y];
   });
 
-  const pathD = histData.length > 1 ? getSmoothPath(points) : '';
+  const pathD = histData.length > 1 ? getSmoothPath(points) : "";
 
   // Gradient fill path
   const fillD = pathD
-    ? `${pathD} L ${points[points.length - 1][0]},${padding.top + chartHeight} L ${points[0][0]},${padding.top + chartHeight} Z`
-    : '';
+    ? `${pathD} L ${points[points.length - 1][0]},${
+        padding.top + chartHeight
+      } L ${points[0][0]},${padding.top + chartHeight} Z`
+    : "";
 
   // Y-axis labels
   const yLabels = useMemo(() => {
@@ -214,8 +225,9 @@ export default function HistoricalLogs({ sensor, onBack }) {
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const { jsPDF } = await import('jspdf');
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const jspdfModule = await import("jspdf");
+      const jsPDF = jspdfModule.jsPDF || jspdfModule.default;
+      const pdf = new jsPDF("p", "mm", "a4");
       const pw = pdf.internal.pageSize.getWidth();
       const ph = pdf.internal.pageSize.getHeight();
       const m = 15; // margin
@@ -224,12 +236,19 @@ export default function HistoricalLogs({ sensor, onBack }) {
       // ── Title ──
       pdf.setFontSize(18);
       pdf.setTextColor(15, 118, 110);
-      pdf.text(`${name} — Historical Logs (24h)`, pw / 2, y, { align: 'center' });
+      pdf.text(`${name} — Historical Logs (24h)`, pw / 2, y, {
+        align: "center",
+      });
       y += 10;
 
       pdf.setFontSize(10);
       pdf.setTextColor(100);
-      pdf.text(`Generated on ${new Date().toLocaleString()} • Data interval: 1 hour`, pw / 2, y, { align: 'center' });
+      pdf.text(
+        `Generated on ${new Date().toLocaleString()} • Data interval: 1 hour`,
+        pw / 2,
+        y,
+        { align: "center" }
+      );
       y += 12;
 
       // ── Chart area ──
@@ -245,8 +264,9 @@ export default function HistoricalLogs({ sensor, onBack }) {
       for (let i = 0; i < yPoints; i++) {
         const val = cMax - (i / yDivs) * (cMax - cMin);
         const ly = chartY + (i / yDivs) * chartH;
-        const label = yDecimals > 0 ? val.toFixed(yDecimals) : Math.round(val).toString();
-        pdf.text(`${label}${unit}`, chartX - 2, ly + 1, { align: 'right' });
+        const label =
+          yDecimals > 0 ? val.toFixed(yDecimals) : Math.round(val).toString();
+        pdf.text(`${label}${unit}`, chartX - 2, ly + 1, { align: "right" });
         pdf.setDrawColor(220);
         pdf.setLineWidth(0.2);
         pdf.line(chartX, ly, chartX + chartW, ly);
@@ -278,7 +298,7 @@ export default function HistoricalLogs({ sensor, onBack }) {
 
         // Dots
         pdf.setFillColor(r, g, b);
-        pts.forEach(p => pdf.circle(p.x, p.y, 1, 'F'));
+        pts.forEach((p) => pdf.circle(p.x, p.y, 1, "F"));
       }
 
       // X-axis labels (every 2nd)
@@ -287,7 +307,7 @@ export default function HistoricalLogs({ sensor, onBack }) {
       hourLabels.forEach((label, i) => {
         if (i % 2 === 0) {
           const lx = chartX + (i / (hourLabels.length - 1)) * chartW;
-          pdf.text(label, lx, chartY + chartH + 5, { align: 'center' });
+          pdf.text(label, lx, chartY + chartH + 5, { align: "center" });
         }
       });
 
@@ -301,10 +321,10 @@ export default function HistoricalLogs({ sensor, onBack }) {
       // Header
       pdf.setFontSize(9);
       pdf.setTextColor(15, 118, 110);
-      pdf.text('Date', colX[0] + 3, y + 5);
-      pdf.text('Time', colX[1] + 3, y + 5);
-      pdf.text('Data', colX[2] + 3, y + 5);
-      
+      pdf.text("Date", colX[0] + 3, y + 5);
+      pdf.text("Time", colX[1] + 3, y + 5);
+      pdf.text("Data", colX[2] + 3, y + 5);
+
       // Header border
       pdf.setDrawColor(15, 118, 110);
       pdf.setLineWidth(0.4);
@@ -320,9 +340,16 @@ export default function HistoricalLogs({ sensor, onBack }) {
         }
 
         const dt = new Date(Date.now() - (23 - i) * 60 * 60 * 1000);
-        const date = `${dt.getDate()}.${dt.getMonth() + 1}.${String(dt.getFullYear()).slice(2)}`;
-        const time = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-        const formatted = yDecimals > 0 ? value.toFixed(yDecimals) : value.toFixed(1);
+        const date = `${dt.getDate()}.${dt.getMonth() + 1}.${String(
+          dt.getFullYear()
+        ).slice(2)}`;
+        const time = dt.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+        const formatted =
+          yDecimals > 0 ? value.toFixed(yDecimals) : value.toFixed(1);
 
         pdf.setTextColor(30);
         pdf.text(date, colX[0] + 3, y + 5);
@@ -337,12 +364,12 @@ export default function HistoricalLogs({ sensor, onBack }) {
         y += rowH;
       });
 
-      const safeName = name ? name.replace(/[^a-zA-Z0-9]/g, '_') : 'sensor';
+      const safeName = name ? name.replace(/[^a-zA-Z0-9]/g, "_") : "sensor";
       const filename = `EcoGrow_${safeName}_Logs.pdf`;
-      
-      const blob = pdf.output('blob');
+
+      const blob = pdf.output("blob");
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = filename;
       document.body.appendChild(link);
@@ -350,24 +377,24 @@ export default function HistoricalLogs({ sensor, onBack }) {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('PDF download failed:', err);
-      alert('PDF download failed: ' + err.message);
+      console.error("PDF download failed:", err);
+      alert("PDF download failed: " + err.message);
     }
     setDownloading(false);
   };
 
   // Color map for chart lines
   const colorMap = {
-    green: '#22c55e',
-    yellow: '#eab308',
-    blue: '#3b82f6',
-    orange: '#f97316',
-    teal: '#14b8a6',
-    purple: '#a855f7',
-    cyan: '#06b6d4',
+    green: "#22c55e",
+    yellow: "#eab308",
+    blue: "#3b82f6",
+    orange: "#f97316",
+    teal: "#14b8a6",
+    purple: "#a855f7",
+    cyan: "#06b6d4",
   };
 
-  const strokeColor = colorMap[color] || '#14b8a6';
+  const strokeColor = colorMap[color] || "#14b8a6";
 
   return (
     <div className="historical-logs">
@@ -381,7 +408,7 @@ export default function HistoricalLogs({ sensor, onBack }) {
           onClick={handleDownload}
           disabled={downloading || loading}
         >
-          {downloading ? 'Generating PDF...' : '📄 Download PDF'}
+          {downloading ? "Generating PDF..." : "📄 Download PDF"}
         </button>
       </div>
 
@@ -398,7 +425,11 @@ export default function HistoricalLogs({ sensor, onBack }) {
             <defs>
               <linearGradient id="hist-fill-grad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={strokeColor} stopOpacity="0.3" />
-                <stop offset="100%" stopColor={strokeColor} stopOpacity="0.02" />
+                <stop
+                  offset="100%"
+                  stopColor={strokeColor}
+                  stopOpacity="0.02"
+                />
               </linearGradient>
             </defs>
 
@@ -446,19 +477,21 @@ export default function HistoricalLogs({ sensor, onBack }) {
                 textAnchor="end"
                 fill="#64748b"
               >
-                {yl.label}{unit}
+                {yl.label}
+                {unit}
               </text>
             ))}
 
             {/* X labels (every 2nd hour to avoid crowding) */}
             {hourLabels.map((label, i) => {
-              const x = padding.left + (i / (hourLabels.length - 1)) * chartWidth;
+              const x =
+                padding.left + (i / (hourLabels.length - 1)) * chartWidth;
               return (
                 <text
                   key={`x-${i}`}
                   x={x}
                   y={padding.top + chartHeight + 20}
-                  fontSize={i % 2 === 0 ? '10' : '0'}
+                  fontSize={i % 2 === 0 ? "10" : "0"}
                   textAnchor="middle"
                   fill="#64748b"
                 >
@@ -468,9 +501,7 @@ export default function HistoricalLogs({ sensor, onBack }) {
             })}
 
             {/* Gradient fill */}
-            {fillD && (
-              <path d={fillD} fill="url(#hist-fill-grad)" />
-            )}
+            {fillD && <path d={fillD} fill="url(#hist-fill-grad)" />}
 
             {/* Line */}
             <path
@@ -513,14 +544,24 @@ export default function HistoricalLogs({ sensor, onBack }) {
             <tbody>
               {histData.map((value, i) => {
                 const dt = new Date(Date.now() - (23 - i) * 60 * 60 * 1000);
-                const date = `${dt.getDate()}.${dt.getMonth() + 1}.${String(dt.getFullYear()).slice(2)}`;
-                const time = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                const formatted = yDecimals > 0 ? value.toFixed(yDecimals) : value.toFixed(1);
+                const date = `${dt.getDate()}.${dt.getMonth() + 1}.${String(
+                  dt.getFullYear()
+                ).slice(2)}`;
+                const time = dt.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                });
+                const formatted =
+                  yDecimals > 0 ? value.toFixed(yDecimals) : value.toFixed(1);
                 return (
                   <tr key={i}>
                     <td>{date}</td>
                     <td>{time}</td>
-                    <td>{formatted}{unit}</td>
+                    <td>
+                      {formatted}
+                      {unit}
+                    </td>
                   </tr>
                 );
               })}
