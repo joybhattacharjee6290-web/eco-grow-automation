@@ -5,7 +5,9 @@ import {
   liveFeedRef,
   historyLogsRef,
   settingsRef,
+  notificationsRef,
   connectedRef,
+  alertsRef,
   getSettingRef,
   authReady,
   SENSOR_KEY_TO_RTDB,
@@ -14,7 +16,8 @@ import {
 // ─── Constants ───────────────────────────────────────────────────────────────
 const FIFO_CAP = 50;           // max points kept in historical arrays
 const HISTORY_BOOTSTRAP = 100; // entries fetched from /history_logs on mount
-const DEMO_INTERVAL_MS = 3000; // mock data update cadence
+const LIVE_INTERVAL_MS = 1000; // live data update cadence (Overview: 1s)
+const CHART_INTERVAL_MS = 10000; // chart data update cadence (Analytics: 10s)
 
 // ─── Utility helpers ─────────────────────────────────────────────────────────
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -36,7 +39,7 @@ const mapLiveFeedToState = (fb) => {
     rainfall: fb.rain ?? 0,
     waterLevel: fb.water_level ?? 0,
     co2: fb.co2 ?? 0,
-    no2: fb.no2 ?? 0,
+    nh3: fb.nh3 ?? 0,
   };
 };
 
@@ -66,10 +69,10 @@ const generateInitialData = () => ({
   airQuality: 60 + Math.random() * 30,
   waterLevel: 60 + Math.random() * 30,
   co2: 0.05 + Math.random() * 0.2,
-  no2: 0.001 + Math.random() * 0.01,
+  nh3: 0.001 + Math.random() * 0.01,
 });
 
-const generateHistoricalData = (currentValue, min, max, points = 8) => {
+const generateHistoricalData = (currentValue, min, max, points = 11) => {
   const data = [];
   let value = currentValue - Math.random() * (max - min) * 0.3;
 
@@ -93,7 +96,7 @@ const appendFIFO = (arr, value, cap = FIFO_CAP) => {
 // ─── Notification generator (preserved) ─────────────────────────────────────
 const generateNotifications = (data) => {
   const newNotifications = [];
-  const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const timestamp = new Date().toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
   if (data.soilMoisture < 35) {
     newNotifications.push({ id: 1, message: 'Soil Moisture is low', type: 'warning', time: timestamp });
@@ -117,7 +120,7 @@ const generateNotifications = (data) => {
 // ═════════════════════════════════════════════════════════════════════════════
 // MAIN HOOK
 // ═════════════════════════════════════════════════════════════════════════════
-export function useSensorData(updateInterval = DEMO_INTERVAL_MS) {
+export function useSensorData(liveInterval = LIVE_INTERVAL_MS, chartInterval = CHART_INTERVAL_MS) {
   // ── Core state ─────────────────────────────────────────────────────────────
   const [sensorData, setSensorData] = useState(generateInitialData);
   const [historicalData, setHistoricalData] = useState({});
@@ -127,6 +130,7 @@ export function useSensorData(updateInterval = DEMO_INTERVAL_MS) {
   const [notifications, setNotifications] = useState([]);
   const [demoMode, setDemoMode] = useState(false);
   const [authError, setAuthError] = useState(null);
+  const [fireAlert, setFireAlert] = useState(false);
 
   // Refs to avoid stale closures in listeners
   const historicalRef = useRef(historicalData);
@@ -135,10 +139,15 @@ export function useSensorData(updateInterval = DEMO_INTERVAL_MS) {
   // Track whether settings have been initialised in RTDB
   const settingsInitialised = useRef(false);
 
-  // ── Notifications (derived from sensorData) ───────────────────────────────
+  // Throttle: track last time historicalData was appended (for chart interval)
+  const lastHistAppendRef = useRef(0);
+
+  // ── Notifications (derived from sensorData — demo mode only) ───────────────
   useEffect(() => {
-    setNotifications(generateNotifications(sensorData));
-  }, [sensorData]);
+    if (demoMode) {
+      setNotifications(generateNotifications(sensorData));
+    }
+  }, [sensorData, demoMode]);
 
   // ══════════════════════════════════════════════════════════════════════════
   // MODE 1: FIREBASE LIVE
@@ -167,22 +176,29 @@ export function useSensorData(updateInterval = DEMO_INTERVAL_MS) {
       unsubscribers.push(() => off(connectedRef, 'value', unsubConnected));
 
       // ── 3. Live feed listener (/live_feed) ─────────────────────────────
+      // sensorData (Overview) updates INSTANTLY on every push (~1s latency).
+      // historicalData (Analytics charts) is throttled to chartInterval (10s).
       const unsubLive = onValue(liveFeedRef, (snap) => {
         const raw = snap.val();
         const mapped = mapLiveFeedToState(raw);
         if (!mapped) return;
 
+        // Always update live sensor data immediately (Overview = 1s)
         setSensorData(mapped);
         setLastUpdated(new Date());
 
-        // FIFO-append to historical arrays
-        setHistoricalData((prev) => {
-          const next = {};
-          for (const key of Object.keys(mapped)) {
-            next[key] = appendFIFO(prev[key] || [], mapped[key]);
-          }
-          return next;
-        });
+        // Throttle FIFO-append to historical arrays (Analytics = 10s)
+        const now = Date.now();
+        if (now - lastHistAppendRef.current >= chartInterval) {
+          lastHistAppendRef.current = now;
+          setHistoricalData((prev) => {
+            const next = {};
+            for (const key of Object.keys(mapped)) {
+              next[key] = appendFIFO(prev[key] || [], mapped[key]);
+            }
+            return next;
+          });
+        }
       });
       unsubscribers.push(() => off(liveFeedRef, 'value', unsubLive));
 
@@ -206,7 +222,7 @@ export function useSensorData(updateInterval = DEMO_INTERVAL_MS) {
           rainfall: [],
           waterLevel: [],
           co2: [],
-          no2: [],
+          nh3: [],
         };
 
         for (const entry of entries) {
@@ -226,7 +242,7 @@ export function useSensorData(updateInterval = DEMO_INTERVAL_MS) {
 
         setHistoricalData(built);
       }, { onlyOnce: true }); // fetch once on mount
-      unsubscribers.push(() => {}); // onlyOnce auto-detaches
+      unsubscribers.push(() => { }); // onlyOnce auto-detaches
 
       // ── 5. Settings listener (/settings) ───────────────────────────────
       const unsubSettings = onValue(settingsRef, (snap) => {
@@ -253,6 +269,102 @@ export function useSensorData(updateInterval = DEMO_INTERVAL_MS) {
         setSensorStates(mapped);
       });
       unsubscribers.push(() => off(settingsRef, 'value', unsubSettings));
+
+      // ── 6. Notifications listener (/notifications last 10) ────────────
+
+      // Firebase push keys encode a timestamp in the first 8 characters
+      // using a base-64 alphabet. Decode it to get epoch ms.
+      const PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
+      const decodePushKeyTime = (key) => {
+        let ts = 0;
+        for (let i = 0; i < 8; i++) {
+          ts = ts * 64 + PUSH_CHARS.indexOf(key[i]);
+        }
+        return ts;
+      };
+
+      const notifQuery = query(notificationsRef, limitToLast(10));
+      const unsubNotif = onValue(notifQuery, (snap) => {
+        const raw = snap.val();
+        if (!raw) {
+          setNotifications([]);
+          return;
+        }
+        const entries = Object.entries(raw)
+          .map(([key, val]) => {
+            // Parse timestamp: number (epoch ms), date string, or broken value
+            let ts = val.timestamp;
+
+            if (typeof ts === 'number' && ts > 0) {
+              // Already epoch ms — use as is
+            } else if (typeof ts === 'string') {
+              // Try as plain number first
+              const asNum = Number(ts);
+              if (!isNaN(asNum) && asNum > 1e12) {
+                ts = asNum;
+              } else {
+                // Parse hardware date strings:
+                // "DD/MM/YYYY HH:MM:SS" or "DD-MM-YYYY HH:MMAM"
+                const m = ts.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
+                if (m) {
+                  let [, day, mon, year, hr, min, sec, ampm] = m;
+                  hr = parseInt(hr);
+                  if (ampm) {
+                    if (ampm.toUpperCase() === 'PM' && hr !== 12) hr += 12;
+                    if (ampm.toUpperCase() === 'AM' && hr === 12) hr = 0;
+                  }
+                  ts = new Date(year, mon - 1, day, hr, parseInt(min), parseInt(sec || 0)).getTime();
+                } else {
+                  // Unparseable string (e.g. '{ ".sv": "timestamp" }') —
+                  // fall back to the timestamp encoded in the Firebase push key
+                  ts = 0;
+                }
+              }
+            } else {
+              ts = 0;
+            }
+
+            // If we couldn't parse the stored timestamp, extract time from
+            // the Firebase push key so the entry still sorts chronologically
+            if (!ts || ts <= 0) {
+              ts = decodePushKeyTime(key);
+            }
+
+            return {
+              id: key,
+              message: val.message || '',
+              type: val.type || 'info',
+              timestamp: ts,
+              time: ts > 0
+                ? new Date(ts).toLocaleString([], {
+                  day: '2-digit',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+                : '',
+            };
+          })
+          .sort((a, b) => b.timestamp - a.timestamp || b.id.localeCompare(a.id));
+        setNotifications(entries);
+      });
+      unsubscribers.push(() => off(notificationsRef, 'value', unsubNotif));
+
+      // ── 7. Fire alert listener (/Alerts) — ZERO DELAY, instant push ─────
+      const unsubAlerts = onValue(alertsRef, (snap) => {
+        const raw = snap.val();
+        console.log('[FireAlert] /Alerts changed:', JSON.stringify(raw));
+        // Handle all possible truthy representations from hardware:
+        // boolean true, string "true"/"1", or number 1
+        const fireValue = raw?.Fire;
+        const isFireActive = fireValue === true
+          || fireValue === 'true'
+          || fireValue === 1
+          || fireValue === '1';
+        console.log('[FireAlert] Fire value:', fireValue, '→ active:', isFireActive);
+        setFireAlert(isFireActive);
+      });
+      unsubscribers.push(() => off(alertsRef, 'value', unsubAlerts));
     };
 
     bootstrap();
@@ -266,7 +378,10 @@ export function useSensorData(updateInterval = DEMO_INTERVAL_MS) {
   }, [demoMode]);
 
   // ══════════════════════════════════════════════════════════════════════════
-  // MODE 2: DEMO MODE (mock data engine — original logic)
+  // MODE 2: DEMO MODE (mock data engine)
+  // Two separate intervals:
+  //   • liveInterval  (1s) → updates sensorData (Overview cards)
+  //   • chartInterval (10s) → appends to historicalData (Analytics charts)
   // ══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
     if (!demoMode) return;
@@ -285,39 +400,47 @@ export function useSensorData(updateInterval = DEMO_INTERVAL_MS) {
       sunlight: generateHistoricalData(initial.sunlight, 200, 1200),
       airQuality: generateHistoricalData(initial.airQuality, 40, 100),
       co2: generateHistoricalData(initial.co2, 350, 1200),
-      no2: generateHistoricalData(initial.no2, 10, 80),
+      nh3: generateHistoricalData(initial.nh3, 10, 80),
     });
 
-    const interval = setInterval(() => {
-      setSensorData((prev) => {
-        const next = {
-          temperature: fluctuate(prev.temperature, 20, 40, 0.05),
-          humidity: fluctuate(prev.humidity, 40, 90, 0.08),
-          soilMoisture: fluctuate(prev.soilMoisture, 20, 80, 0.06),
-          rainfall: fluctuate(prev.rainfall, 0, 100, 0.1),
-          sunlight: fluctuate(prev.sunlight, 200, 1200, 0.12),
-          airQuality: fluctuate(prev.airQuality, 40, 100, 0.07),
-          waterLevel: fluctuate(prev.waterLevel, 20, 100, 0.04),
-          co2: fluctuate(prev.co2, 350, 1200, 0.06),
-          no2: fluctuate(prev.no2, 10, 80, 0.08),
-        };
+    // ── Fast interval (1s): update live sensor values (Overview) ──────────
+    const generateNextData = (prev) => ({
+      temperature: fluctuate(prev.temperature, 20, 40, 0.05),
+      humidity: fluctuate(prev.humidity, 40, 90, 0.08),
+      soilMoisture: fluctuate(prev.soilMoisture, 20, 80, 0.06),
+      rainfall: fluctuate(prev.rainfall, 0, 100, 0.1),
+      sunlight: fluctuate(prev.sunlight, 200, 1200, 0.12),
+      airQuality: fluctuate(prev.airQuality, 40, 100, 0.07),
+      waterLevel: fluctuate(prev.waterLevel, 20, 100, 0.04),
+      co2: fluctuate(prev.co2, 350, 1200, 0.06),
+      nh3: fluctuate(prev.nh3, 10, 80, 0.08),
+    });
 
-        // Also FIFO-append to historical data
+    const liveTimer = setInterval(() => {
+      setSensorData((prev) => generateNextData(prev));
+      setLastUpdated(new Date());
+    }, liveInterval);
+
+    // ── Slow interval (10s): append to historical data (Analytics charts) ─
+    const chartTimer = setInterval(() => {
+      setSensorData((current) => {
+        // Read current sensorData and append to historical
         setHistoricalData((prevHist) => {
           const updated = {};
-          for (const key of Object.keys(next)) {
-            updated[key] = appendFIFO(prevHist[key] || [], next[key]);
+          for (const key of Object.keys(current)) {
+            updated[key] = appendFIFO(prevHist[key] || [], current[key]);
           }
           return updated;
         });
-
-        return next;
+        return current; // don't modify sensorData
       });
-      setLastUpdated(new Date());
-    }, updateInterval);
+    }, chartInterval);
 
-    return () => clearInterval(interval);
-  }, [demoMode, updateInterval]);
+    return () => {
+      clearInterval(liveTimer);
+      clearInterval(chartTimer);
+    };
+  }, [demoMode, liveInterval, chartInterval]);
 
   // ── Toggle handlers ────────────────────────────────────────────────────────
 
@@ -361,7 +484,7 @@ export function useSensorData(updateInterval = DEMO_INTERVAL_MS) {
     airQuality: Number(sensorData.airQuality.toFixed(0)),
     waterLevel: Number(sensorData.waterLevel.toFixed(0)),
     co2: Number(sensorData.co2.toFixed(3)),
-    no2: Number(sensorData.no2.toFixed(3)),
+    nh3: Number(sensorData.nh3.toFixed(3)),
   };
 
   // ── Return ─────────────────────────────────────────────────────────────────
@@ -378,6 +501,7 @@ export function useSensorData(updateInterval = DEMO_INTERVAL_MS) {
     demoMode,
     toggleDemoMode,
     authError,
+    fireAlert,
   };
 }
 
@@ -386,8 +510,8 @@ export function useSensorData(updateInterval = DEMO_INTERVAL_MS) {
 // ═════════════════════════════════════════════════════════════════════════════
 const SensorDataContext = createContext(null);
 
-export function SensorDataProvider({ children, updateInterval = DEMO_INTERVAL_MS }) {
-  const sensorData = useSensorData(updateInterval);
+export function SensorDataProvider({ children, liveInterval = LIVE_INTERVAL_MS, chartInterval = CHART_INTERVAL_MS }) {
+  const sensorData = useSensorData(liveInterval, chartInterval);
 
   return (
     <SensorDataContext.Provider value={sensorData}>

@@ -101,7 +101,7 @@ export default function Overview() {
   const sunlightPercent = formattedData.sunlight;
   //const airQualityPercent = formattedData.airQuality;
   const co2Percent = formattedData.co2;
-  const no2Percent = formattedData.no2;
+  const nh3Percent = formattedData.nh3;
 
   const getAQIStatus = (aqi) => {
     if (aqi <= 100) return "Good Air Quality";
@@ -166,7 +166,10 @@ export default function Overview() {
                   key={notification.id || index}
                   className={`notification-${notification.type}`}
                 >
-                  {notification.message}
+                  <span>{notification.message}</span>
+                  {notification.time && (
+                    <span className="notification-time">{notification.time}</span>
+                  )}
                 </li>
               ))
             ) : (
@@ -261,9 +264,9 @@ export default function Overview() {
             <Donut
               size={110}
               stroke={12}
-              value={no2Percent}
+              value={nh3Percent}
               isDark={true}
-              center={`${formattedData.no2.toFixed(3)}%`}
+              center={`${formattedData.nh3.toFixed(3)}%`}
             />
           </div>
         </div>

@@ -28,7 +28,9 @@ const auth = getAuth(app);
 const liveFeedRef = ref(db, 'live_feed');
 const historyLogsRef = ref(db, 'history_logs');
 const settingsRef = ref(db, 'settings');
+const notificationsRef = ref(db, 'notifications');
 const connectedRef = ref(db, '.info/connected');
+const alertsRef = ref(db, 'Alerts');
 
 /**
  * Returns a ref for a specific setting key, e.g. "water_pump"
@@ -45,6 +47,7 @@ const SENSOR_KEY_TO_RTDB = {
   temperature: 'temp_sensor',
   moisture: 'moisture_sensor',
   rainfall: 'rainfall_sensor',
+  
 };
 
 // ── Anonymous Auth Promise ───────────────────────────────────────────────────
@@ -73,7 +76,9 @@ export {
   liveFeedRef,
   historyLogsRef,
   settingsRef,
+  notificationsRef,
   connectedRef,
+  alertsRef,
   getSettingRef,
   authReady,
   SENSOR_KEY_TO_RTDB,

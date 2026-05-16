@@ -3,6 +3,8 @@ import './App.css';
 import Overview from './components/Overview';
 import Sensors from './components/Sensors';
 import Analytics from './components/Analytics';
+import HistoricalLogs from './components/HistoricalLogs';
+import FireAlertOverlay from './components/FireAlertOverlay';
 import { SensorDataProvider, useSensorDataContext } from './hooks/useSensorData.jsx';
 
 function ConnectionStatus() {
@@ -18,7 +20,18 @@ function ConnectionStatus() {
 function AppShell() {
   const [activeTab, setActiveTab] = useState('overview');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { demoMode, toggleDemoMode, isConnected } = useSensorDataContext();
+  const [selectedSensor, setSelectedSensor] = useState(null);
+  const { demoMode, toggleDemoMode, isConnected, fireAlert } = useSensorDataContext();
+
+  const handleCardClick = (sensorConfig) => {
+    setSelectedSensor(sensorConfig);
+    setActiveTab('history');
+  };
+
+  const handleBackToAnalytics = () => {
+    setSelectedSensor(null);
+    setActiveTab('analytics');
+  };
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -27,6 +40,8 @@ function AppShell() {
 
   return (
     <div className="app">
+      {/* 🔥 FIRE ALERT — renders above EVERYTHING, zero delay */}
+      <FireAlertOverlay active={fireAlert} />
       <aside className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="logo">
@@ -98,12 +113,16 @@ function AppShell() {
             {activeTab === 'overview' && '📊 Overview'}
             {activeTab === 'sensors' && '📡 Sensors'}
             {activeTab === 'analytics' && '📈 Analytics'}
+            {activeTab === 'history' && `📊 ${selectedSensor?.name || 'History'}`}
           </h1>
         </header>
 
         {activeTab === 'overview' && <Overview />}
         {activeTab === 'sensors' && <Sensors />}
-        {activeTab === 'analytics' && <Analytics />}
+        {activeTab === 'analytics' && <Analytics onCardClick={handleCardClick} />}
+        {activeTab === 'history' && selectedSensor && (
+          <HistoricalLogs sensor={selectedSensor} onBack={handleBackToAnalytics} />
+        )}
       </main>
     </div>
   );
@@ -112,7 +131,7 @@ function AppShell() {
 // Outer wrapper — provides the context
 function App() {
   return (
-    <SensorDataProvider updateInterval={3000}>
+    <SensorDataProvider liveInterval={1000} chartInterval={10000}>
       <AppShell />
     </SensorDataProvider>
   );

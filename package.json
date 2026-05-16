@@ -11,7 +11,10 @@
     "deploy": "npx surge ./dist --domain ecogrow-automation.surge.sh"
   },
   "dependencies": {
+    "canvas": "^3.2.3",
     "firebase": "^12.12.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

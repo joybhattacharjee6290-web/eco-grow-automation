@@ -7,7 +7,7 @@ export default function Sensors() {
 
   const sensors = [
     { id: 'waterPump', name: 'Water Pump', icon: '💧', status: sensorStates.waterPump ? 'Active' : 'Inactive' },
-    { id: 'waterLevel', name: 'Water Level', icon: '🌊', value: `${formattedData.waterLevel} L` },
+    { id: 'waterLevel', name: 'Lights', icon: '💡', value: `${formattedData.waterLevel} L` },
     { id: 'ldrSensor', name: 'LDR Sensor', icon: '☀️', value: `${formattedData.sunlight}%` },
     { id: 'airQuality', name: 'Air Quality Sensor', icon: '🌬️', value: `${formattedData.airQuality} AQI` },
     { id: 'temperature', name: 'Temperature Sensor', icon: '🌡️', value: `${formattedData.temperature}°C` },

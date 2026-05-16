@@ -124,7 +124,7 @@
 
 /* Row 3 */
 .rainfall-card {
-  //background: linear-gradient(135deg, #e6fdf0 0%, #d1fae5 100%);
+  background: linear-gradient(135deg, #e6fdf0 0%, #d1fae5 100%);
   background-color : #E7F0D2 !important;
   grid-column: 1 / 2;
 }
@@ -223,12 +223,30 @@
   flex-direction: column;
   gap: 0.75rem;
   font-size: 0.85rem;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.notification-list::-webkit-scrollbar {
+  display: none;
 }
 
 .notification-list li {
   color: #a7e6d6;
   padding: 0.25rem 0;
   border-bottom: 1px solid rgba(167, 230, 214, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.notification-time {
+  font-size: 0.7em;
+  color: rgba(167, 230, 214, 0.6);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ========== Aqi Card ========== */

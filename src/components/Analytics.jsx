@@ -31,34 +31,23 @@ const getSmoothPath = (points, height, padding) => {
 };
 
 //function LineChart({ data, color, showBars = false }) 
-function LineChart({ data, color, showBars = false, yMin = null, yMax = null, unit = '' , label = ''}){
+function LineChart({ data: rawData, color, showBars = false, yMin = null, yMax = null, unit = '' , label = '', yPoints = 5, yDecimals = 0}){
  const [hoverIndex, setHoverIndex] = useState(null);
+ const sliced = rawData.slice(-11);
+ const padded = sliced.length < 11
+   ? [...Array(11 - sliced.length).fill(sliced[0] ?? 0), ...sliced]
+   : sliced;
+ const data = [...padded].reverse();
  const getTimeLabel = (index) => {
-  const now = new Date();
-  const minutesAgo = Math.floor((data.length - 1 - index) * 5);
-
-
-  const pointTime = new Date(now.getTime() - minutesAgo * 60000);
-  const dateStr = pointTime.toLocaleDateString([], {
-    day: '2-digit',
-    month: 'short'
-  });
-  const timeStr = pointTime.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-
-  return minutesAgo === 0
-    ? `${dateStr}, ${timeStr} (Now)`
-    : `${dateStr}, ${timeStr} (${minutesAgo}m ago)`;
-
+  const secondsAgo = Math.round(index * 10);
+  if (secondsAgo === 0) return 'Now';
+  return `${secondsAgo}s ago`;
 };
   if (showBars) {
     const min = yMin !== null ? yMin : Math.min(...data);
     const max = yMax !== null ? yMax : Math.max(...data);
     const range = max - min || 1;
-    const limitedData = data.slice(-5); // last 5 
+
     return (
       <div style={{ display: 'flex', height: '100%' }}>
   
@@ -86,7 +75,7 @@ function LineChart({ data, color, showBars = false, yMin = null, yMax = null, un
   
           {/* BARS */}
           <div className="bar-chart" style={{ flex: 1 }}>
-            {limitedData.map((value, index) => {
+            {data.map((value, index) => {
               const height = ((value - min) / range) * 90;
               return (
                 <div key={index} className="bar-wrapper">
@@ -110,9 +99,9 @@ function LineChart({ data, color, showBars = false, yMin = null, yMax = null, un
             color: '#64748b',
             marginTop: '4px'
           }}>
-          {limitedData.map((_, i) => {
-            const minutesAgo = (limitedData.length - 1 - i) * 5;
-            return <span key={i}>{minutesAgo === 0 ? 'Now' : `${minutesAgo}m`}</span>;
+          {data.map((_, i) => {
+            const secondsAgo = i * 10;
+            return <span key={i}>{secondsAgo === 0 ? '0s' : `${secondsAgo}s`}</span>;
           })}
           </div>
   
@@ -121,8 +110,8 @@ function LineChart({ data, color, showBars = false, yMin = null, yMax = null, un
     );
   }
 
-  const max = Math.max(...data);
-  const min = Math.min(...data);
+  const max = yMax !== null ? yMax : Math.max(...data);
+  const min = yMin !== null ? yMin : Math.min(...data);
   const range = max - min || 1;
   const width = 300;
   const height = 120;
@@ -217,27 +206,32 @@ function LineChart({ data, color, showBars = false, yMin = null, yMax = null, un
       />
   
       {/* ✅ Y LABELS (values) */}
-      {[0, 1, 2, 3].map((i) => {
-        const y = padding + (i / 3) * chartHeight;
-        const value = Math.round(min + (range * (3 - i)) / 3);
+      {(yMin !== null && yMax !== null
+        ? Array.from({length: yPoints}, (_, i) => i).map((i) => {
+            const divs = yPoints - 1;
+            const y = padding + (i / divs) * chartHeight;
+            const value = (max - (i / divs) * (max - min)).toFixed(yDecimals);
+            return (
+              <text key={i} x={padding - 5} y={y + 3} fontSize="8" textAnchor="end" fill="#64748b">
+                {value}{unit}
+              </text>
+            );
+          })
+        : [0, 1, 2, 3].map((i) => {
+            const y = padding + (i / 3) * chartHeight;
+            const value = Math.round(min + (range * (3 - i)) / 3);
+            return (
+              <text key={i} x={padding - 5} y={y + 3} fontSize="8" textAnchor="end" fill="#64748b">
+                {value}
+              </text>
+            );
+          })
+      )}
   
-        return (
-          <text
-            key={i}
-            x={padding - 5}
-            y={y + 3}
-            fontSize="8"
-            textAnchor="end"
-            fill="#64748b"
-          >
-            {value}
-          </text>
-        );
-      })}
-  
-      {/* ✅ X LABELS (index/time) */}
+      {/* ✅ X LABELS (seconds ago) */}
       {data.map((_, i) => {
         const x = padding + (i / (data.length - 1)) * chartWidth;
+        const secondsAgo = i * 10;
   
         return (
           <text
@@ -248,7 +242,7 @@ function LineChart({ data, color, showBars = false, yMin = null, yMax = null, un
             textAnchor="middle"
             fill="#64748b"
           >
-            {i + 1}
+            {secondsAgo === 0 ? '0s' : `${secondsAgo}s`}
           </text>
         );
       })}
@@ -311,7 +305,7 @@ function LineChart({ data, color, showBars = false, yMin = null, yMax = null, un
       
             <text x="10" y="18" fontSize="11" fill="#0f172a" fontWeight="600">
             {label}: {
-              label === "Co2 Level" || label === "No2"
+              label === "Co2 Level" || label === "Ammonia(NH3)"
                 ? interpolatedValue?.toFixed(3)
                 : interpolatedValue?.toFixed(1)
             } {unit}
@@ -328,7 +322,7 @@ function LineChart({ data, color, showBars = false, yMin = null, yMax = null, un
   );
 }
 
-export default function Analytics() {
+export default function Analytics({ onCardClick }) {
   const { formattedData, historicalData, lastUpdated } = useSensorDataContext();
 
   const analyticsData = useMemo(() => [
@@ -336,53 +330,68 @@ export default function Analytics() {
       id: 1,
       name: 'Soil Moisture',
       value: `${formattedData.soilMoisture}%`,
-      unit: '',
+      unit: '%',
       color: 'green',
       chartData: historicalData.soilMoisture || [45, 48, 46, 50, 52, 49, 48, 47],
       grid: 'top-left',
-      showBars: false
+      showBars: false,
+      yMin: 0,
+      yMax: 100,
+      dataKey: 'soilMoisture'
     },
     {
       id: 2,
       name: 'Sunlight',
       value: `${formattedData.sunlight.toString()}%`,
-      unit: '',
+      unit: '%',
       color: 'yellow',
       chartData: historicalData.sunlight || [600, 650, 700, 680, 720, 760, 750, 800],
       grid: 'top-right',
-      showBars: false
+      showBars: false,
+      yMin: 0,
+      yMax: 100,
+      dataKey: 'sunlight'
     },
     {
       id: 3,
       name: 'Carbon Dioxide(CO2)',
       value: `${formattedData.co2}%`,
-      unit: '',
+      unit: '%',
       color: 'blue',
       chartData: historicalData.co2 || [40, 45, 50, 48, 52, 55, 53, 50],
       grid: 'middle-left',
-      showBars: true,
+      showBars: false,
+      yMin: 0,
+      yMax: 0.2,
+      yDecimals: 3,
+      dataKey: 'co2'
     },
     {
       id: 4,
       name: 'Temperature',
       value: `${formattedData.temperature}°C`,
-      unit: '',
+      unit: '°C',
       color: 'orange',
       chartData: historicalData.temperature || [22, 23, 24, 25, 26, 25, 24, 23],
       grid: 'middle-center',
-      showBars: false
+      showBars: false,
+      yMin: 0,
+      yMax: 50,
+      yPoints: 6,
+      dataKey: 'temperature'
     },
     {
       id: 5,
       name: 'Humidity',
       value: `${formattedData.humidity}%`,
-      unit: '',
+      unit: '%',
       color: 'teal',
       chartData: historicalData.humidity || [60, 62, 65, 63, 64, 66, 65, 64],
       grid: 'middle-right',
-      showBars: true,
+      showBars: false,
       yMin: 0,
-      yMax: 100
+      yMax: 100,
+      dataKey: 'humidity'
     },
     {
       id: 6,
@@ -392,17 +401,25 @@ export default function Analytics() {
       color: 'purple',
       chartData: historicalData.airQuality || [85, 86, 88, 87, 89, 90, 88, 87],
       grid: 'bottom-left',
-      showBars: false
+      showBars: false,
+      yMin: 0,
+      yMax: 500,
+      yPoints: 6,
+      dataKey: 'airQuality'
     },
     {
       id: 7,
       name: 'Ammonia(NH3)',
-      value: `${formattedData.no2}%`,
-      unit: '',
+      value: `${formattedData.nh3}%`,
+      unit: '%',
       color: 'cyan',
-      chartData: historicalData.no2 || [2, 3, 5, 4, 6, 7, 6, 8],
+      chartData: historicalData.nh3 || [2, 3, 5, 4, 6, 7, 6, 8],
       grid: 'bottom-right',
-      showBars: false
+      showBars: false,
+      yMin: 0,
+      yMax: 0.2,
+      yDecimals: 3,
+      dataKey: 'nh3'
     },
   ], [formattedData, historicalData]);
 
@@ -421,7 +438,10 @@ export default function Analytics() {
       </div>
       <div className="analytics-grid">
         {analyticsData.map((item) => (
-          <div key={item.id} className={`${getGridClass(item.grid)} card-glass`}>
+          <div key={item.id} className={`${getGridClass(item.grid)} card-glass`}
+            onClick={() => onCardClick && onCardClick(item)}
+            style={{ cursor: onCardClick ? 'pointer' : 'default' }}
+          >
             <div className="card-header">
               <h3 className="analytics-title">{item.name}</h3>
               <div className={`current-value ${item.color}`}>
@@ -437,6 +457,8 @@ export default function Analytics() {
               yMax={item.yMax}
               unit={item.unit}
               label={item.name}
+              yPoints={item.yPoints}
+              yDecimals={item.yDecimals}
             />
             </div>
           </div>
